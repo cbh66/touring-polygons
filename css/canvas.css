@@ -1,0 +1,9 @@
+#main-area * {
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+}
+
+#main-area {
+    padding: 0px;
+}

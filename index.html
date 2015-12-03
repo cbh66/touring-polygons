@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" type="text/css" href="https://ajax.googleapis.com/ajax/libs/dojo/1.10.4/dijit/themes/claro/claro.css">
+    <link rel="stylesheet" type="text/css" href="css/main.css">
+    <title>Touring Polygons Problem(s)</title>
+    <script type="text/javascript">
+        var dojoConfig = {
+            async: true,
+            baseUrl: "./",
+            tlmSiblingOfDojo: false,
+            packages: [
+                {name: "js",   location: "js"},
+                {name: "lib", location: "js/lib"},
+                {name: "main", location: "js/main"},
+                {name: "polygon",  location: "js/polygon"}
+            ]
+        };
+    </script>
+    <script src="https://ajax.googleapis.com/ajax/libs/dojo/1.10.4/dojo/dojo.js"></script>
+    <script type="text/javascript">
+        // Parse the HTML and start up the application.
+        require(["dojo/parser", "dojo/promise/all", "js/App", "dojo/text!main/app.json", "dijit/layout/ContentPane", "dijit/layout/BorderContainer", "dojo/domReady!"],
+            function (parser, all, App, config) {
+
+            config = JSON.parse(config);
+            var app = new App(config);
+
+            all([parser.parse(), app.start()]).then(function (_results) {
+                app.getComponent("interfaceManager").build();
+            }, function (err) {
+                console.error("ERROR STARTING APP", err);
+            });
+        });
+    </script>
+</head>
+
+<body class="claro">
+    <div class="pageOverlay">
+        <div id="loadingOverlay">
+            <div class="loadingMessage">Loading....</div>
+        </div>
+    </div>
+    <div data-dojo-type="dijit/layout/BorderContainer" data-dojo-props="design:'sidebar', gutters:true, liveSplitters:true" id="borderContainer" style="height:100%; width=100%;">
+        <div data-dojo-type="dijit/layout/ContentPane" data-dojo-props="region:'top'">
+        </div>
+        <div data-dojo-type="dijit/layout/BorderContainer" data-dojo-props="splitter:true, region:'right'" style="width: 300px;">
+            <div data-dojo-type="dijit/layout/ContentPane" data-dojo-props="splitter:true, region:'center'"></div>
+        </div>
+        <div data-dojo-type="dijit/layout/ContentPane" data-dojo-props="splitter:true, region:'center'" id="main-area">
+        </div>
+        <div data-dojo-type="dijit/layout/ContentPane" data-dojo-props="splitter:true, region:'bottom'">
+        </div>
+    </div>
+</body>
+</html>

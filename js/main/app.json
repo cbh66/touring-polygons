@@ -1,0 +1,17 @@
+{
+    "components": {
+        "interfaceManager": {
+            "create": "main/components/InterfaceManager",
+            "connect": {
+                "_designArea": "designArea"
+            }
+        },
+        "designArea": {
+            "create": "polygon/Canvas"
+        }
+    },
+    "events": {
+    },
+    "services": {
+    }
+}
