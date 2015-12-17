@@ -22,14 +22,24 @@ define([
      */
     var InterfaceManager = declare(null, {
 
+        events: function () {
+            return [
+                {name: "startApp", source: "appStart"}
+            ];
+        },
+
         /**
          *
          *  @memberof InterfaceManager.prototype
          */
         build: function () {
-            this._designArea.placeAt(dom.byId("main-area"));
+            this._toolbar.placeAt("toolbar");
+            this._toolbar.startup();
+            this._designArea.placeAt("main-area");
+            this._designArea.startup();
 
             this.fadeOut();
+            this.startApp();
         },
 
         fadeOut: function () {

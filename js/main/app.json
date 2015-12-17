@@ -3,15 +3,29 @@
         "interfaceManager": {
             "create": "main/components/InterfaceManager",
             "connect": {
-                "_designArea": "designArea"
+                "_designArea": "designArea",
+                "_toolbar": "toolbar"
             }
         },
         "designArea": {
-            "create": "polygon/Canvas"
+            "create": "main/components/Canvas",
+            "connect": {
+                "_pathFinderTool": "pathFinder"
+            }
+        },
+        "pathFinder": {
+            "create": "main/components/PathFinder"
+        },
+        "toolbar": {
+            "create": "main/widgets/MainToolbar",
+            "params": {}
         }
     },
     "events": {
+        "appStart": ["pathFinder.onAppStart", "designArea.onAppStart"]
     },
     "services": {
+        "getSurface": "designArea.getSurface",
+        "startConstruction": "pathFinder.startConstruction"
     }
 }
