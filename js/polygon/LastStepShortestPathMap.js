@@ -2,12 +2,14 @@ define([
         "dojo/_base/declare",
         "dojo/_base/lang",
         "polygon/HalfPlane",
+        "polygon/UnboundedRegion",
         "util/geom",
         "lib/lodash"
     ], function (
         declare,
         lang,
         HalfPlane,
+        UnboundedRegion,
         geom,
         _
     ) {
@@ -37,10 +39,17 @@ define([
         return polygon.isSegmentTangent(segment)
     }
 
-    var ShortestPathRegion = declare(null, {
+    var ShortestPathRegion = declare([UnboundedRegion], {
+
+        passthroughRegionColor: [0, 191, 255, 0.50],
+        pointRegionColor: [255, 0, 0, 0.50],
+        edgeRegionColor: [124, 252, 0, 0.50],
+
         constructor: function (start, source, polygon) {
+            this.start = start;
             this.polygon = polygon;
             this.tangent = false;
+            this.angleSum = 0;
             this._setSource(source);
             this._makeBounds(start, source);
         },
@@ -71,11 +80,7 @@ define([
 
             this.bounds = bounds;
             if (this.type === "point") {
-                // Wide means more than 180 degrees, which is a special case.
-                this.wide = _.all(this.bounds, function (bound) {
-                        return !this.polygon.lineIntersects(bound.slope, bound.intercept) &&
-                            bound.onCorrectSide(start);
-                    }, this);
+                this.wide = this._isReflex();
             }
             this.drawTo(surface);
         },
@@ -90,12 +95,13 @@ define([
             if (otherPoint === point) {
                 otherPoint = edge.end;
             }
-            if (this.polygon.isSegmentTangent(segment) &&
+            if (this.type === "point" && this.polygon.isSegmentTangent(segment) &&
                     isPassThrough(geom.segmentMidpoint(edge), start, this.polygon)) {
                 slope = geom.segmentSlope(segment);
                 intercept = geom.segmentIntercept(segment, slope);
                 this.tangent = true;
                 direction = -geom.sideOfLine(otherPoint, slope, intercept);
+                //this.angleSum += Math.PI/2;
                 return new HalfPlane(slope, intercept, direction);
             }
 
@@ -107,6 +113,8 @@ define([
             if (this.type === "point") {   // Points away from this edge
                 direction = -direction;
             } // else this.type === "edge", points towards the edge
+            var angle = geom.angleBetweenLines(slope, geom.segmentSlope(edge));
+            this.angleSum += Math.PI - 2*angle;
             return new HalfPlane(slope, intercept, direction);
         },
 
@@ -120,65 +128,28 @@ define([
             return new HalfPlane(slope, intercept, direction);
         },
 
-        drawTo: function (surface) {
-            var width = surface.width || surface.rawNode.width.animVal.value;
-            var height = surface.height || surface.rawNode.height.animVal.value;
-            var current = this.bounds[0];
-            var segment = geom.lineToSegment(current.slope, current.intercept, {
-                l: -width, w: 2*width, t: -height, h: 2*height
-            });
-
-            var prevPoint;
-            function startOnCorrectSide(bound) {
-                if (bound === current) return true;
-                return bound.onCorrectSide(segment.start) === //true;
-                            (this.type === "edge" || !this.wide);
+        _isReflex: function () {
+            // A special case.
+            var center = this.source;
+            if (this.type === "edge") {
+                return false;
             }
-            if (_.all(this.bounds, startOnCorrectSide, this)) {
-                prevPoint = segment.start;
-            } else {
-                prevPoint = segment.end;
+            // Special case: if start point is within, and there is a tangent line,
+            // total angle must be >180 degrees.
+            if (this.isTangentRegion() && _.all(this.bounds, function (bound) {
+                        return bound.onCorrectSide(this.start);
+                    }, this)) {
+                return true;
             }
-
-            for (var i = 1; i < this.bounds.length; ++i) {
-                current = this.bounds[i - 1];
-                var intersection = geom.lineIntersectionPoint(current.slope, current.intercept,
-                                            this.bounds[i].slope, this.bounds[i].intercept);
-                surface.createLine({
-                    x1: prevPoint.x,
-                    y1: prevPoint.y,
-                    x2: intersection.x,
-                    y2: intersection.y
-                }).setStroke("red");
-                prevPoint = intersection;
-            }
-
-            current = this.bounds[this.bounds.length - 1];
-            var segment = geom.lineToSegment(current.slope, current.intercept, {
-                l: -width, w: 2*width, t: -height, h: 2*height
-            });
-            if (_.all(this.bounds, startOnCorrectSide, this)) {
-                intersection = segment.start;
-            } else {
-                intersection = segment.end;
-            }
-            surface.createLine({
-                x1: prevPoint.x,
-                y1: prevPoint.y,
-                x2: intersection.x,
-                y2: intersection.y
-            }).setStroke("red");
+            // Second condition makes sure bounds are tangent to vertex
+            return this.angleSum > Math.PI && _.all(this.bounds, function (bound) {
+                return !this.polygon.lineIntersects(bound.slope, bound.intercept);
+            }, this);
         },
 
         isTangentRegion: function () {
             //console.log(this.tangent);
             return this.tangent;
-        },
-
-        pointWithin: function (point) {
-            return _.all(this.bounds, function (bound) {
-                return bound.onCorrectSide(point);
-            }, this);
         }
     });
 
@@ -209,6 +180,8 @@ define([
                                     this.source, this.polygon)) {
                     this.regions.push(this.makeOneRegion(currentEdge));
                 }
+            } else {
+                console.log("rejected", currentVertex);
             }
             currentVertex = currentEdge.end;
             currentEdge = this.polygon.nextEdge(currentVertex);
@@ -220,6 +193,8 @@ define([
                                         this.source, this.polygon)) {
                         this.regions.push(this.makeOneRegion(currentEdge));
                     }
+                } else {
+                    console.log("rejected", currentVertex);
                 }
                 currentVertex = currentEdge.end;
                 currentEdge = this.polygon.nextEdge(currentVertex);
@@ -228,6 +203,34 @@ define([
 
         makeOneRegion: function (source) {
             return new ShortestPathRegion(this.source, source, this.polygon);
+        },
+
+        displayPassThroughRegion: function () {
+            var i = 0;
+            var direction;
+            var lastRegion = this.regions[this.regions.length - 1];
+            for (; i < this.regions.length; ++i) {
+                if (this.regions[i].isTangentRegion()) {
+                    // Go in the direction AWAY from the other point
+                    if ((i === 0 && lastRegion.isTangentRegion()) ||
+                            this.regions[i - 1].isTangentRegion()) {
+                        direction = 1;
+                    } else {
+                        direction = -1;
+                    }
+                    break;
+                }
+            }
+            // Add first tangent bound
+            do { // Go in circle from last back to first
+                i += direction;
+                while (i < 0) i += boxPoints.length;
+                i %= boxPoints.length;
+                // Add each edge's bound
+                points.push(boxPoints[i]);
+            } while (!this.regions[i].isTangentRegion());
+            // Add last tangent bound
+            // All bounds should have an opposite direction
         },
 
         shortestPathTo: function (dest) {

@@ -33,6 +33,7 @@ define([
 
         onAppStart: function () {
             function fixProps(point) {
+                point.moveToFront();
                 point.x = point.shape.cx;
                 point.y = point.shape.cy;
                 var m = new Moveable(point);

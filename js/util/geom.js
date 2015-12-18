@@ -160,6 +160,17 @@ define([
             return Math.abs(geom.sideOfLine(point, slope, intercept)) <= leeway;
         },
 
+        angleBetweenLines: function (slope1, slope2) {
+            if (!_.isFinite(slope1)) {
+                return (Math.PI/2) - geom.angleBetweenLines(slope2, 0);
+            }
+            if (!_.isFinite(slope2)) {
+                return (Math.PI/2) - geom.angleBetweenLines(slope1, 0);
+            }
+            var x = (slope1 - slope2) / (1 + slope1*slope2);
+            return Math.atan(Math.abs(x));
+        },
+
         reflectPointOverLine: function (point, slope, intercept) {
             var reflected = {};
             if (_.isFinite(slope)) {
@@ -172,6 +183,38 @@ define([
                 reflected.x = 2*intercept - point.x;
             }
             return reflected;
+        },
+
+        sortRadiallyAbout: function (center, points) { // Sorts clockwise from 12 oclock
+            function compare(a, b) {
+                var xDiffA = a.x - center.x;
+                var xDiffB = b.x - center.x;
+                if (xDiffA >= 0 && xDiffB < 0)
+                    return -1;
+                if (xDiffA < 0 && xDiffB >= 0)
+                    return 1;
+                if (xDiffA == 0 && xDiffB == 0) {
+                    if (a.y - center.y >= 0 || b.y - center.y >= 0)
+                        return a.y > b.y ? -1 : 1;
+                    return b.y > a.y ? -1 : 1;
+                }
+
+                // compute the cross product of vectors (center -> a) x (center -> b)
+                var det = (xDiffA) * (b.y - center.y) - (xDiffB) * (a.y - center.y);
+                if (det < 0)
+                    return -1;
+                if (det > 0)
+                    return 1;
+
+                // points a and b are on the same line from the center
+                // check which point is closer to the center
+                var d1 = (xDiffA * xDiffA) + (a.y - center.y) * (a.y - center.y);
+                var d2 = (xDiffB * xDiffB) + (b.y - center.y) * (b.y - center.y);
+                return d1 > d2 ? -1 : 1;
+            }
+            var sortedArray = _.clone(points);
+            sortedArray.sort(compare);
+            return sortedArray;
         }
     };
 
