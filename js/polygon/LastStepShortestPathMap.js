@@ -59,20 +59,22 @@ define([
             if (this.type == "point") {
                 bounds = [this._halfPlaneAt(start, source, this.polygon.prevEdge(source)),
                           this._halfPlaneAt(start, source, this.polygon.nextEdge(source))];
+                // Check if angle is over 180 or something?
+                // Behavior will have to change for particularly wide cones
+                // That's if the other halfplane's endpoint is in bounds?  The wrong one?
             } else if (this.type == "edge") {
                 bounds = [this._halfPlaneAt(start, source.start, source),
                           this._halfPlaneFromSegment(source),
                           this._halfPlaneAt(start, source.end, source)];
             }
-            // Bounds should be HalfPlanes
-            // If edge, make into halfplane, add
-            // Direction based on where the rest of the polygon is
+
             this.bounds = bounds;
             _.each(bounds, function (bound) {
                 if (bound) {
-                    bound.asLineOn(surface);
+                    //bound.asLineOn(surface);
                 }
             }, this);
+            this.drawTo(surface);
         },
 
         _halfPlaneAt: function (start, point, edge) {
@@ -80,23 +82,29 @@ define([
                 start: start,
                 end: point
             };
+            var slope, intercept, direction;
             var otherPoint = edge.start;
             if (otherPoint === point) {
                 otherPoint = edge.end;
             }
             if (this.polygon.isSegmentTangent(segment) &&
-                isPassThrough(geom.segmentMidpoint(edge), start, this.polygon)) {
+                    isPassThrough(geom.segmentMidpoint(edge), start, this.polygon)) {
+                slope = geom.segmentSlope(segment);
+                intercept = geom.segmentIntercept(segment, slope);
                 this.tangent = true;
-                var slope = geom.segmentSlope(segment);
-                var intercept = geom.segmentIntercept(segment, slope);
-                var direction = -geom.sideOfLine(otherPoint, slope, intercept);
+                direction = -geom.sideOfLine(otherPoint, slope, intercept);
                 return new HalfPlane(slope, intercept, direction);
             }
-            // If tangent && other vertex pass-through, then just extend the line, else...
-            // Reflect start over intercept
-            // Make segment from start to point, extend to line
-            // Direction is...???  other side from edge's other endpoint?
-            // And opposite if this.type is edge
+
+            segment.start = geom.reflectPointOverLine(start, geom.segmentSlope(edge),
+                                                        geom.segmentIntercept(edge));
+            slope = geom.segmentSlope(segment);
+            intercept = geom.segmentIntercept(segment, slope);
+            direction = geom.sideOfLine(otherPoint, slope, intercept);
+            if (this.type === "point") {   // Points away from this edge
+                direction = -direction;
+            } // else this.type === "edge", points towards the edge
+            return new HalfPlane(slope, intercept, direction);
         },
 
         _halfPlaneFromSegment: function (segment) {
@@ -105,8 +113,60 @@ define([
             var polygonQueryPoint = _.find(this.polygon.vertices, function (v) {
                 return v !== segment.start && v !== segment.end;
             }, this);
-            var direction = geom.sideOfLine(polygonQueryPoint, slope, intercept);
+            var direction = -geom.sideOfLine(polygonQueryPoint, slope, intercept);
             return new HalfPlane(slope, intercept, direction);
+        },
+
+        drawTo: function (surface) {
+            var width = surface.width || surface.rawNode.width.animVal.value;
+            var height = surface.height || surface.rawNode.height.animVal.value;
+            var current = this.bounds[0];
+            var segment = geom.lineToSegment(current.slope, current.intercept, {
+                l: -width, w: 2*width, t: -height, h: 2*height
+            });
+            var prevPoint;
+            function startOnCorrectSide(bound) {
+                if (bound === current) return true;
+                return bound.onCorrectSide(segment.start);
+            }
+            if (_.all(this.bounds, startOnCorrectSide, this)) {
+                prevPoint = segment.start;
+                console.log("TRUE");
+            } else {
+                prevPoint = segment.end;
+                console.log("FALSE");
+            }
+
+            for (var i = 1; i < this.bounds.length; ++i) {
+                current = this.bounds[i - 1];
+                var intersection = geom.lineIntersectionPoint(current.slope, current.intercept,
+                                            this.bounds[i].slope, this.bounds[i].intercept);
+                console.log(surface.createLine({
+                    x1: prevPoint.x,
+                    y1: prevPoint.y,
+                    x2: intersection.x,
+                    y2: intersection.y
+                }).setStroke("red"));
+                prevPoint = intersection;
+            }
+
+            current = this.bounds[this.bounds.length - 1];
+            var segment = geom.lineToSegment(current.slope, current.intercept, {
+                l: -width, w: 2*width, t: -height, h: 2*height
+            });
+            if (_.all(this.bounds, startOnCorrectSide, this)) {
+                intersection = segment.start;
+                console.log("TRUE");
+            } else {
+                intersection = segment.end;
+                console.log("FALSE");
+            }
+            console.log(surface.createLine({
+                x1: prevPoint.x,
+                y1: prevPoint.y,
+                x2: intersection.x,
+                y2: intersection.y
+            }).setStroke("red"));
         },
 
         isTangentRegion: function () {

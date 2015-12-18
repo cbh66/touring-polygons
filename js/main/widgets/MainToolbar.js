@@ -17,10 +17,6 @@ define([
     var Toolbar = declare([_WidgetBase, _TemplatedMixin, _OnDijitClickMixin], {
         templateString: toolbarTemplateString,
 
-        constructor: function () {
-            console.log(arguments);
-        },
-
         services: function () {
             return [
                 {name: "_startConstruction", source: "startConstruction"}
@@ -31,6 +27,6 @@ define([
             console.error("App not connected");
         }
     });
-    console.log(new Toolbar());
+    
     return Toolbar;
 });

@@ -27,38 +27,21 @@ define([
         },
 
         onCorrectSide: function (point) {
-            return (this.dir < 0) == (geom.sideOfLine(point) < 0);
+            return (this.dir < 0) == (geom.sideOfLine(point, this.slope, this.intercept) < 0);
         },
 
         asLineOn: function (surface, stroke) {
-            var start, end, width, height;
             stroke = stroke || "red";
-            width = surface.width || surface.rawNode.width.animVal.value;
-            height = surface.height || surface.rawNode.height.animVal.value;
-            if (_.isFinite(this.slope)) {
-                start = {
-                    x: -width,
-                    y: this.intercept - width * this.slope
-                };
-                end = {
-                    x: 2*width,
-                    y: this.intercept + 2*width * this.slope
-                };
-            } else {
-                start = {
-                    x: this.intercept,
-                    y: -height
-                };
-                end = {
-                    x: this.intercept,
-                    y: 2*height
-                };
-            }
+            var width = surface.width || surface.rawNode.width.animVal.value;
+            var height = surface.height || surface.rawNode.height.animVal.value;
+            var segment = geom.lineToSegment(this.slope, this.intercept, {
+                l: -width, w: 2*width, t: -height, h: 2*height
+            });
             return surface.createLine({
-                x1: start.x,
-                y1: start.y,
-                x2: end.x,
-                y2: end.y
+                x1: segment.start.x,
+                y1: segment.start.y,
+                x2: segment.end.x,
+                y2: segment.end.y
             }).setStroke(stroke);
         }
 

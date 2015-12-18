@@ -36,6 +36,30 @@ define([
             return midpoint;
         },
 
+        lineToSegment: function (slope, intercept, box) { // box: h, w, t, l
+            var start, end;
+            if (_.isFinite(slope)) {
+                start = {
+                    x: box.l,
+                    y: intercept + box.l * slope
+                };
+                end = {
+                    x: box.l + box.w,
+                    y: intercept + (box.l + box.w) * slope
+                };
+            } else {
+                start = {
+                    x: intercept,
+                    y: box.t
+                };
+                end = {
+                    x: intercept,
+                    y: box.l + box.t
+                };
+            }
+            return {start: start, end: end};
+        },
+
         // Returns a point of intersection, Infinity if collinear, or null if parallel
         // if a slope is NaN, aIntercept should be x intercept.  Otherwise should be y.
         lineIntersectionPoint: function (aSlope, aIntercept, bSlope, bIntercept) {
@@ -134,6 +158,20 @@ define([
         pointOnLine: function (point, slope, intercept, leeway) {
             leeway = leeway || 0.0000001
             return Math.abs(geom.sideOfLine(point, slope, intercept)) <= leeway;
+        },
+
+        reflectPointOverLine: function (point, slope, intercept) {
+            var reflected = {};
+            if (_.isFinite(slope)) {
+                var d = (point.x + (point.y - intercept) * slope) / 
+                            (1 + slope*slope);
+                reflected.x = 2*d - point.x;
+                reflected.y = 2*d*slope - point.y + 2*intercept;
+            } else {
+                reflected.y = point.y;
+                reflected.x = 2*intercept - point.x;
+            }
+            return reflected;
         }
     };
 
