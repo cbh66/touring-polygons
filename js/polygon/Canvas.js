@@ -24,7 +24,7 @@ define([
      *  @name  Canvas
      */
     var Canvas = declare([_WidgetBase, _TemplatedMixin, _OnDijitClickMixin], {
-        templateString: "<div></div>",
+        templateString: "<div class='polygonCanvas'></div>",
 
         vertexColor: "yellow",
         vertexOutline: "blue",

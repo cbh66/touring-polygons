@@ -61,7 +61,8 @@ define([
                           this._halfPlaneAt(start, source, this.polygon.nextEdge(source))];
                 // Check if angle is over 180 or something?
                 // Behavior will have to change for particularly wide cones
-                // That's if the other halfplane's endpoint is in bounds?  The wrong one?
+                // Can only happen if the start point is in the region
+                //      Maybe if it's tangent to the polygon?
             } else if (this.type == "edge") {
                 bounds = [this._halfPlaneAt(start, source.start, source),
                           this._halfPlaneFromSegment(source),
@@ -69,11 +70,13 @@ define([
             }
 
             this.bounds = bounds;
-            _.each(bounds, function (bound) {
-                if (bound) {
-                    //bound.asLineOn(surface);
-                }
-            }, this);
+            if (this.type === "point") {
+                // Wide means more than 180 degrees, which is a special case.
+                this.wide = _.all(this.bounds, function (bound) {
+                        return !this.polygon.lineIntersects(bound.slope, bound.intercept) &&
+                            bound.onCorrectSide(start);
+                    }, this);
+            }
             this.drawTo(surface);
         },
 
@@ -124,29 +127,29 @@ define([
             var segment = geom.lineToSegment(current.slope, current.intercept, {
                 l: -width, w: 2*width, t: -height, h: 2*height
             });
+
             var prevPoint;
             function startOnCorrectSide(bound) {
                 if (bound === current) return true;
-                return bound.onCorrectSide(segment.start);
+                return bound.onCorrectSide(segment.start) === //true;
+                            (this.type === "edge" || !this.wide);
             }
             if (_.all(this.bounds, startOnCorrectSide, this)) {
                 prevPoint = segment.start;
-                console.log("TRUE");
             } else {
                 prevPoint = segment.end;
-                console.log("FALSE");
             }
 
             for (var i = 1; i < this.bounds.length; ++i) {
                 current = this.bounds[i - 1];
                 var intersection = geom.lineIntersectionPoint(current.slope, current.intercept,
                                             this.bounds[i].slope, this.bounds[i].intercept);
-                console.log(surface.createLine({
+                surface.createLine({
                     x1: prevPoint.x,
                     y1: prevPoint.y,
                     x2: intersection.x,
                     y2: intersection.y
-                }).setStroke("red"));
+                }).setStroke("red");
                 prevPoint = intersection;
             }
 
@@ -156,17 +159,15 @@ define([
             });
             if (_.all(this.bounds, startOnCorrectSide, this)) {
                 intersection = segment.start;
-                console.log("TRUE");
             } else {
                 intersection = segment.end;
-                console.log("FALSE");
             }
-            console.log(surface.createLine({
+            surface.createLine({
                 x1: prevPoint.x,
                 y1: prevPoint.y,
                 x2: intersection.x,
                 y2: intersection.y
-            }).setStroke("red"));
+            }).setStroke("red");
         },
 
         isTangentRegion: function () {
@@ -211,7 +212,6 @@ define([
             }
             currentVertex = currentEdge.end;
             currentEdge = this.polygon.nextEdge(currentVertex);
-            console.log("-------------");
             while (currentVertex !== first) {
                 if (!isPassThrough(currentVertex, this.source, this.polygon)) {
                     region = this.makeOneRegion(currentVertex);

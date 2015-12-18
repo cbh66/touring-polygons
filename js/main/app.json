@@ -4,7 +4,8 @@
             "create": "main/components/InterfaceManager",
             "connect": {
                 "_designArea": "designArea",
-                "_toolbar": "toolbar"
+                "_toolbar": "toolbar",
+                "_messagePane": "messagePane"
             }
         },
         "designArea": {
@@ -19,13 +20,24 @@
         "toolbar": {
             "create": "main/widgets/MainToolbar",
             "params": {}
+        },
+        "messagePane": {
+            "create": "util/MessageWindow",
+            "data": {
+                "basePath": {"literal": "main/text/"}
+            }
         }
     },
+
     "events": {
         "appStart": ["pathFinder.onAppStart", "designArea.onAppStart"]
     },
+
     "services": {
         "getSurface": "designArea.getSurface",
-        "startConstruction": "pathFinder.startConstruction"
+        "startConstruction": "pathFinder.startConstruction",
+
+        "appendMessage": "messagePane.appendContent",
+        "newMessage": "messagePane.displayFile"
     }
 }

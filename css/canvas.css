@@ -1,4 +1,4 @@
-#main-area * {
+#main-area > .polygonCanvas, #main-area > .polygonCanvas > svg {
     height: 100%;
     width: 100%;
     overflow: hidden;

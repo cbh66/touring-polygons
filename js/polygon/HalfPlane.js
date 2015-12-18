@@ -27,7 +27,8 @@ define([
         },
 
         onCorrectSide: function (point) {
-            return (this.dir < 0) == (geom.sideOfLine(point, this.slope, this.intercept) < 0);
+            var side = geom.sideOfLine(point, this.slope, this.intercept);
+            return side === 0 || ((this.dir < 0) == (side < 0));
         },
 
         asLineOn: function (surface, stroke) {

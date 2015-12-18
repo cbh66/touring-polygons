@@ -380,6 +380,30 @@ define([
             this.propertiesCallbacks.push(newCallback);
         },
 
+
+        lineIntersects: function (slope, intercept, includeEndpoints) {
+            var endPointOnEdge;
+            if (!includeEndpoints) {
+                 endPointOnLine = function (edge) {
+                    return geom.pointOnLine(edge.start, slope, intercept) ||
+                            geom.pointOnLine(edge.end, slope, intercept);
+                }
+            } else {
+                endPointOnEdge = _.constant(false);
+            }
+            return _.any(this.edges, function (edge) {
+                if (endPointOnLine(edge)) {
+                    return false;
+                }
+                var edgeSlope = geom.segmentSlope(edge);
+                var edgeIntercept = geom.segmentIntercept(edge, edgeSlope);
+                var intersection = geom.lineIntersectionPoint(edgeSlope, edgeIntercept,
+                                                                slope, intercept);
+                return intersection && (intersection === Infinity ||
+                        geom.pointOnSegment(intersection, edge));
+            }, this);
+        },
+
         segmentIntersects: function (testEdge, includeEndpoints) {
             var endPointOnEdge;
             if (!includeEndpoints) {
