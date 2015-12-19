@@ -60,12 +60,14 @@ define([
         },
 
         startConstruction: function () {
+            // Drop the first polygons that have start point in it, explain why
             if (this.polygons.length == 0) {
                 console.log("NO POLYGONS!  This is the easiest case.")
             } else {
                 var first = new LastStepShortestPathMap(this.startPoint, this.polygons[0], [],
                     this.getSurface());
                 console.log(first);
+                first.displayRegions(this.getSurface());
             }
         },
 

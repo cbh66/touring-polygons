@@ -14,15 +14,6 @@ define([
         _
     ) {
 
-    var surface;
-
-    function isPoint(p) {
-        return _.isFinite(p.x) && _.isFinite(p.y);
-    }
-
-    function isSegment(s) {
-        return s.start && s.end;
-    }
     function isPassThrough(point, source, polygon) {
         var segment = {
             start: source,
@@ -31,13 +22,6 @@ define([
         return polygon.segmentIntersects(segment);
     }
 
-    function isTangentTo(point, source, polygon) {
-        var segment = {
-            start: source,
-            end: point
-        };
-        return polygon.isSegmentTangent(segment)
-    }
 
     var ShortestPathRegion = declare([UnboundedRegion], {
 
@@ -56,9 +40,9 @@ define([
 
         _setSource: function (source) {
             this.source = source;
-            if (isPoint(source)) {
+            if (_.isFinite(source.x) && _.isFinite(source.y)) {
                 this.type = "point";
-            } else if (isSegment(source)) {
+            } else if (source.start && source.end) {
                 this.type = "edge";
             }
         },
@@ -82,7 +66,6 @@ define([
             if (this.type === "point") {
                 this.wide = this._isReflex();
             }
-            this.drawTo(surface, this.color());
         },
 
         color: function () {
@@ -169,10 +152,11 @@ define([
     
     var LastStepShortestPathMap = declare(null, {
 
-
-        passthroughRegionColor: [0, 191, 255, 0.50],
-        pointRegionColor: [255, 0, 0, 0.50],
-        edgeRegionColor: [124, 252, 0, 0.50],
+        colors: {
+            passthrough: [0, 191, 255, 0.50],
+            point: [255, 0, 0, 0.50],
+            edge: [124, 252, 0, 0.50],
+        },
 
         constructor: function (source, polygon, previousMaps, s) {
             previousMaps = previousMaps || [];
@@ -197,8 +181,6 @@ define([
                                     this.source, this.polygon)) {
                     this.regions.push(this.makeOneRegion(currentEdge));
                 }
-            } else {
-                console.log("rejected", currentVertex);
             }
             currentVertex = currentEdge.end;
             currentEdge = this.polygon.nextEdge(currentVertex);
@@ -214,21 +196,41 @@ define([
                 currentVertex = currentEdge.end;
                 currentEdge = this.polygon.nextEdge(currentVertex);
             }
+            this.regions.push(this.buildPassThroughRegion());
         },
 
         makeOneRegion: function (source) {
             return new ShortestPathRegion(this.source, source, this.polygon);
         },
 
-        displayPassThroughRegion: function () {
+        displayRegions: function (surface, type) {
+            function rightType(region) {
+                return !type || type === region.type;
+            }
+            var regions = _.filter(this.regions, rightType, this);
+            return _.map(regions, function (region) {
+                var color = this.colorOf(region);
+                return region.drawTo(surface, color);
+            }, this);
+        },
+/*
+        displayPassThroughRegion: function (surface) {
+            if (!this.passThroughRegion) {
+                this.buildPassThroughRegion();
+            }
+            return this.passThroughRegion.drawTo(surface, this.passthroughRegionColor);
+        },
+*/
+        buildPassThroughRegion: function () {
             var i = 0;
             var direction;
             var lastRegion = this.regions[this.regions.length - 1];
             for (; i < this.regions.length; ++i) {
                 if (this.regions[i].isTangentRegion()) {
                     // Go in the direction AWAY from the other point
-                    if ((i === 0 && lastRegion.isTangentRegion()) ||
-                            this.regions[i - 1].isTangentRegion()) {
+                    if (i === 0 && lastRegion.isTangentRegion()) {
+                        direction = 1;
+                    } else if (i !== 0 && this.regions[i - 1].isTangentRegion()) {
                         direction = 1;
                     } else {
                         direction = -1;
@@ -236,20 +238,28 @@ define([
                     break;
                 }
             }
+            function increment(i, inc, max) {
+                i += inc;
+                while (i < 0) i += max;
+                return i % max;
+            }
 
             var passThroughRegion = new UnboundedRegion();
+            passThroughRegion.type = "passthrough";
             // Add first tangent bound
             passThroughRegion.addBounds(this.regions[i].tangent.flipped());
-            do { // Go in circle from last back to first
-                i += direction;
-                while (i < 0) i += boxPoints.length;
-                i %= boxPoints.length;
+            i = increment(i, direction, this.regions.length);
+            while (!this.regions[i].isTangentRegion()) { // Go in circle from last back to first
                 // Add each edge's bound
-                passThroughRegion.addBounds(this.regions[i].tangent.flipped());
-            } while (!this.regions[i].isTangentRegion());
+                passThroughRegion.addBounds(this.regions[i].bounds[1].flipped());
+                i = increment(i, direction, this.regions.length);
+            }
             passThroughRegion.addBounds(this.regions[i].tangent.flipped());
-            // Add last tangent bound
-            // All bounds should have an opposite direction
+            return this.passThroughRegion = passThroughRegion;
+        },
+
+        colorOf: function (region) {
+            return this.colors[region.type];
         },
 
         shortestPathTo: function (dest) {

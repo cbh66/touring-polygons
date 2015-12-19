@@ -65,7 +65,8 @@ define([
             }
             pathPoints.push(intersection);
             var path = this._connectAndDraw(pathPoints, surface, width, height)
-            path.setFill(color);;
+            path.setFill(color);
+            return path;
         },
 
         _connectAndDraw: function (points, surface, width, height) {
@@ -94,10 +95,14 @@ define([
                     break;
                 }
             }
+
+            function increment(i, inc, max) {
+                i += inc;
+                while (i < 0) i += max;
+                return i % max;
+            }
             while (boxPoints[i] !== points[0]) { // Go in circle from last back to first
-                i += direction;
-                while (i < 0) i += boxPoints.length;
-                i %= boxPoints.length;
+                i = increment(i, direction, boxPoints.length);
                 points.push(boxPoints[i]);
             }
 
@@ -108,7 +113,7 @@ define([
             if (this.bounds.length === 0) {
                 return {x: 0, y: 0};
             } else {
-                var mid = this.bounds.length / 2;
+                var mid = Math.floor(this.bounds.length / 2);
                 var bound = this.bounds[mid];
                 var midIntersection = null;
                 _.each(this.bounds, function (otherBound) {
