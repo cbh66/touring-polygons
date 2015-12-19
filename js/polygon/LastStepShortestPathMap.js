@@ -48,7 +48,7 @@ define([
         constructor: function (start, source, polygon) {
             this.start = start;
             this.polygon = polygon;
-            this.tangent = false;
+            this.tangent = null;
             this.angleSum = 0;
             this._setSource(source);
             this._makeBounds(start, source);
@@ -82,7 +82,11 @@ define([
             if (this.type === "point") {
                 this.wide = this._isReflex();
             }
-            this.drawTo(surface);
+            this.drawTo(surface, this.color());
+        },
+
+        color: function () {
+            return this[this.type + "RegionColor"];
         },
 
         _halfPlaneAt: function (start, point, edge) {
@@ -99,10 +103,10 @@ define([
                     isPassThrough(geom.segmentMidpoint(edge), start, this.polygon)) {
                 slope = geom.segmentSlope(segment);
                 intercept = geom.segmentIntercept(segment, slope);
-                this.tangent = true;
                 direction = -geom.sideOfLine(otherPoint, slope, intercept);
+                this.tangent = new HalfPlane(slope, intercept, direction);
                 //this.angleSum += Math.PI/2;
-                return new HalfPlane(slope, intercept, direction);
+                return this.tangent;
             }
 
             segment.start = geom.reflectPointOverLine(start, geom.segmentSlope(edge),
@@ -128,6 +132,14 @@ define([
             return new HalfPlane(slope, intercept, direction);
         },
 
+        _getCenter: function () {
+            if (this.type === "edge") {
+                return geom.segmentMidpoint(this.source);
+            } else if (this.type === "point") {
+                return this.source;
+            }
+        },
+
         _isReflex: function () {
             // A special case.
             var center = this.source;
@@ -149,13 +161,18 @@ define([
 
         isTangentRegion: function () {
             //console.log(this.tangent);
-            return this.tangent;
+            return !!this.tangent;
         }
     });
 
 
     
     var LastStepShortestPathMap = declare(null, {
+
+
+        passthroughRegionColor: [0, 191, 255, 0.50],
+        pointRegionColor: [255, 0, 0, 0.50],
+        edgeRegionColor: [124, 252, 0, 0.50],
 
         constructor: function (source, polygon, previousMaps, s) {
             previousMaps = previousMaps || [];
@@ -193,8 +210,6 @@ define([
                                         this.source, this.polygon)) {
                         this.regions.push(this.makeOneRegion(currentEdge));
                     }
-                } else {
-                    console.log("rejected", currentVertex);
                 }
                 currentVertex = currentEdge.end;
                 currentEdge = this.polygon.nextEdge(currentVertex);
@@ -221,14 +236,18 @@ define([
                     break;
                 }
             }
+
+            var passThroughRegion = new UnboundedRegion();
             // Add first tangent bound
+            passThroughRegion.addBounds(this.regions[i].tangent.flipped());
             do { // Go in circle from last back to first
                 i += direction;
                 while (i < 0) i += boxPoints.length;
                 i %= boxPoints.length;
                 // Add each edge's bound
-                points.push(boxPoints[i]);
+                passThroughRegion.addBounds(this.regions[i].tangent.flipped());
             } while (!this.regions[i].isTangentRegion());
+            passThroughRegion.addBounds(this.regions[i].tangent.flipped());
             // Add last tangent bound
             // All bounds should have an opposite direction
         },

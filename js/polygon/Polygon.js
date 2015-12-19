@@ -418,7 +418,7 @@ define([
             }
             return _.any(this.edges, function (edge) {
                 return !endPointOnEdge(edge, testEdge) &&
-                    geom.segmentsIntersect(edge, testEdge);
+                        geom.segmentsIntersect(edge, testEdge);
             }, this);
         },
 
@@ -438,8 +438,12 @@ define([
                                                     otherSlope, otherIntercept);
                 var xMin = Math.min(edge.start.x, edge.end.x);
                 var xMax = Math.max(edge.start.x, edge.end.x);
-                return edge.start !== point && edge.end !== point &&
-                        intersection && xMin <= intersection.x && intersection.x <= xMax;
+                var yMin = Math.min(edge.start.y, edge.end.y);
+                var yMax = Math.max(edge.start.y, edge.end.y);
+                return edge.start !== point && edge.end !== point && intersection &&
+                        (intersection === Infinity ||
+                            xMin <= intersection.x && intersection.x <= xMax &&
+                            yMin <= intersection.y && intersection.y <= yMax);
             }, this);
         },
 

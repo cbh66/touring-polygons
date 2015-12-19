@@ -108,32 +108,43 @@ define([
             } else {
                 min = Math.min(segment.start.y, segment.end.y);
                 max = Math.max(segment.start.y, segment.end.y);
-                return point.x === segment.start.x &&
+                return geom.pointOnLine(point, slope, intercept) &&
                         min <= point.y && point.y <= max;
             }
         },
 
         segmentsIntersect: function (a, b) {
-            var aStart = Math.min(a.start.x, a.end.x);
-            var aEnd = Math.max(a.start.x, a.end.x);
-            var bStart = Math.min(b.start.x, b.end.x);
-            var bEnd = Math.max(b.start.x, b.end.x);
+            var aStartX = Math.min(a.start.x, a.end.x);
+            var aEndX = Math.max(a.start.x, a.end.x);
+            var bStartX = Math.min(b.start.x, b.end.x);
+            var bEndX = Math.max(b.start.x, b.end.x);
 
-            if (aEnd < bStart || aStart > bEnd) {
+            if (aEndX < bStartX || aStartX > bEndX) {
                 return null;
             }
-            var xInterval = [Math.max(aStart, bStart), // Any intersection must
-                             Math.min(aEnd, bEnd)];    // be in this interval
 
             var aSlope = geom.segmentSlope(a);
             var bSlope = geom.segmentSlope(b);
             var aIntercept = geom.segmentIntercept(a, aSlope);
             var bIntercept = geom.segmentIntercept(b, bSlope);
+
             var intersection = geom.lineIntersectionPoint(aSlope, aIntercept, bSlope, bIntercept);
             if (intersection === null || intersection === Infinity) {
                 return intersection;
             }
-            if (intersection.x >= xInterval[0] && intersection.x <= xInterval[1]) {
+            var aStartY = Math.min(a.start.y, a.end.y);
+            var aEndY = Math.max(a.start.y, a.end.y);
+            var bStartY = Math.min(b.start.y, b.end.y);
+            var bEndY = Math.max(b.start.y, b.end.y);
+            if (aEndY < bStartY || aStartY > bEndY) {
+                return null;
+            }
+            var xInterval = [Math.max(aStartX, bStartX), // Any intersection must
+                             Math.min(aEndX, bEndX)];    // be in these intervals
+            var yInterval = [Math.max(aStartY, bStartY),
+                             Math.min(aEndY, bEndY)];
+            if (xInterval[0] <= intersection.x && intersection.x <= xInterval[1] &&
+                yInterval[0] <= intersection.y && intersection.y <= yInterval[1]) {
                 return intersection;
             } else {
                 return null;
@@ -156,7 +167,7 @@ define([
         },
 
         pointOnLine: function (point, slope, intercept, leeway) {
-            leeway = leeway || 0.0000001
+            leeway = leeway || 0.00001
             return Math.abs(geom.sideOfLine(point, slope, intercept)) <= leeway;
         },
 

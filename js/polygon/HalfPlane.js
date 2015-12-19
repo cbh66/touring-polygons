@@ -31,6 +31,10 @@ define([
             return side === 0 || ((this.dir < 0) == (side < 0));
         },
 
+        flipped: function () {
+            return new HalfPlane(this.slope, this.intercept, -this.dir);
+        },
+
         asLineOn: function (surface, stroke) {
             stroke = stroke || "red";
             var width = surface.width || surface.rawNode.width.animVal.value;

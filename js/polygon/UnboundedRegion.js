@@ -26,7 +26,8 @@ define([
             Array.prototype.push.apply(this.bounds, arguments);
         },
 
-        drawTo: function (surface) {
+        drawTo: function (surface, color) {
+            color = color || "transparent";
             var width = surface.width || surface.rawNode.width.animVal.value;
             var height = surface.height || surface.rawNode.height.animVal.value;
             var current = this.bounds[0];
@@ -63,18 +64,14 @@ define([
                 intersection = segment.end;
             }
             pathPoints.push(intersection);
-            this._connectAndDraw(pathPoints, surface);
+            var path = this._connectAndDraw(pathPoints, surface, width, height)
+            path.setFill(color);;
         },
 
-        _connectAndDraw: function (points, surface) {
-            var width = surface.width || surface.rawNode.width.animVal.value;
-            var height = surface.height || surface.rawNode.height.animVal.value;
+        _connectAndDraw: function (points, surface, width, height) {
             var boxPoints = [{x:-width, y:-height}, {x:-width, y: 2*height},
                                 {x:2*width, y:-height}, {x:2*width, y:2*height}];
-            var center = this.source;
-            if (this.type === "edge") {
-                center = geom.segmentMidpoint(this.source);
-            }
+            var center = this._getCenter();
 
             var lastPoint = points[points.length - 1];
             boxPoints = _.filter(boxPoints, function (p) {
@@ -104,13 +101,26 @@ define([
                 points.push(boxPoints[i]);
             }
 
-            var path = surface.createPolyline(points).setStroke("blue");
-            var color = this.edgeRegionColor;
-            if (this.type === "point") {
-                color = this.pointRegionColor;
+            return surface.createPolyline(points).setStroke("blue");
+        },
+
+        _getCenter: function () {
+            if (this.bounds.length === 0) {
+                return {x: 0, y: 0};
+            } else {
+                var mid = this.bounds.length / 2;
+                var bound = this.bounds[mid];
+                var midIntersection = null;
+                _.each(this.bounds, function (otherBound) {
+                    var intersection = geom.lineIntersectionPoint(bound.slope, bound.intercept,
+                                                        otherBound.slope, otherBound.intercept);
+                    if (intersection && intersection !== Infinity) {
+                        midIntersection = intersection;
+                        return false;
+                    }
+                }, this);
+                return midIntersection || {x: 0, y: this.bounds[0].intercept};
             }
-            path.setFill(color);
-            console.log(path);
         },
 
         pointWithin: function (point) {
