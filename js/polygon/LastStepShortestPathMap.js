@@ -52,10 +52,6 @@ define([
             if (this.type == "point") {
                 bounds = [this._halfPlaneAt(start, source, this.polygon.prevEdge(source)),
                           this._halfPlaneAt(start, source, this.polygon.nextEdge(source))];
-                // Check if angle is over 180 or something?
-                // Behavior will have to change for particularly wide cones
-                // Can only happen if the start point is in the region
-                //      Maybe if it's tangent to the polygon?
             } else if (this.type == "edge") {
                 bounds = [this._halfPlaneAt(start, source.start, source),
                           this._halfPlaneFromSegment(source),
@@ -158,12 +154,11 @@ define([
             edge: [124, 252, 0, 0.50],
         },
 
-        constructor: function (source, polygon, previousMaps, s) {
+        constructor: function (source, polygon, previousMaps) {
             previousMaps = previousMaps || [];
             this.previousMaps = _.clone(previousMaps);
             this.source = source;
             this.polygon = polygon;
-            this.surface = surface = s;   /////////////// GLOBAL FOR DEBUGGING ///////////////
             this.setupRegions();
         },
 
@@ -251,7 +246,9 @@ define([
             i = increment(i, direction, this.regions.length);
             while (!this.regions[i].isTangentRegion()) { // Go in circle from last back to first
                 // Add each edge's bound
-                passThroughRegion.addBounds(this.regions[i].bounds[1].flipped());
+                if (this.regions[i].type === "edge") {
+                    passThroughRegion.addBounds(this.regions[i].bounds[1].flipped());
+                }
                 i = increment(i, direction, this.regions.length);
             }
             passThroughRegion.addBounds(this.regions[i].tangent.flipped());

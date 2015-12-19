@@ -67,7 +67,7 @@ define([
                 var first = new LastStepShortestPathMap(this.startPoint, this.polygons[0], [],
                     this.getSurface());
                 console.log(first);
-                first.displayRegions(this.getSurface());
+                var regions = first.displayRegions(this.getSurface());
             }
         },
 
