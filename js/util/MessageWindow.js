@@ -50,7 +50,7 @@ define([
             }
         },
 
-        basePathSetter: function (newPath) {
+        setBasePathAttr: function (newPath) {
             if (newPath !== "") {
                 if (!_.endsWith(newPath, "/")) {
                     newPath += "/";

@@ -42,10 +42,12 @@
             <div class="loadingMessage">Loading....</div>
         </div>
     </div>
-    <div data-dojo-type="dijit/layout/BorderContainer" data-dojo-props="design:'sidebar', gutters:true, liveSplitters:true" id="borderContainer" style="height:100%; width=100%;">
+    <div data-dojo-type="dijit/layout/BorderContainer" data-dojo-props="design:'sidebar', gutters:true, liveSplitters:true" style="height:100%; width=100%;">
         <div data-dojo-type="dijit/layout/ContentPane" data-dojo-props="region:'top'">
         </div>
-        <div data-dojo-type="dijit/layout/ContentPane" data-dojo-props="splitter:true, region:'right'" style="width: 35%;" id="messagePane">
+        <div data-dojo-type="dijit/layout/BorderContainer" data-dojo-props="design:'sidebar', gutters:true, liveSplitters:true, region:'right'" style="width:35%;">
+            <div data-dojo-type="dijit/layout/ContentPane" data-dojo-props="splitter:true, region:'center'" id="messagePane"></div>
+            <div data-dojo-type="dijit/layout/ContentPane" data-dojo-props="splitter:true, region:'bottom'" id="nextButton" style="height:2em;"></div>
         </div>
         <div data-dojo-type="dijit/layout/ContentPane" data-dojo-props="splitter:true, region:'center'" id="main-area">
         </div>

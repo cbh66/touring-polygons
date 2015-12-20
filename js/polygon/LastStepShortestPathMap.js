@@ -29,9 +29,10 @@ define([
         pointRegionColor: [255, 0, 0, 0.50],
         edgeRegionColor: [124, 252, 0, 0.50],
 
-        constructor: function (start, source, polygon) {
+        constructor: function (start, source, polygon, segmentTo) {
             this.start = start;
             this.polygon = polygon;
+            this.segmentTo = segmentTo;
             this.tangent = null;
             this.angleSum = 0;
             this._setSource(source);
@@ -69,17 +70,14 @@ define([
         },
 
         _halfPlaneAt: function (start, point, edge) {
-            var segment = {
-                start: start,
-                end: point
-            };
+            var segment = this.segmentTo(point);
             var slope, intercept, direction;
             var otherPoint = edge.start;
             if (otherPoint === point) {
                 otherPoint = edge.end;
             }
             if (this.type === "point" && this.polygon.isSegmentTangent(segment) &&
-                    isPassThrough(geom.segmentMidpoint(edge), start, this.polygon)) {
+                    this.polygon.segmentIntersects(this.segmentTo(geom.segmentMidpoint(edge)))) {
                 slope = geom.segmentSlope(segment);
                 intercept = geom.segmentIntercept(segment, slope);
                 direction = -geom.sideOfLine(otherPoint, slope, intercept);
@@ -88,7 +86,7 @@ define([
                 return this.tangent;
             }
 
-            segment.start = geom.reflectPointOverLine(start, geom.segmentSlope(edge),
+            segment.start = geom.reflectPointOverLine(segment.start, geom.segmentSlope(edge),
                                                         geom.segmentIntercept(edge));
             slope = geom.segmentSlope(segment);
             intercept = geom.segmentIntercept(segment, slope);
@@ -127,11 +125,14 @@ define([
             }
             // Special case: if start point is within, and there is a tangent line,
             // total angle must be >180 degrees.
+            //*
             if (this.isTangentRegion() && _.all(this.bounds, function (bound) {
-                        return bound.onCorrectSide(this.start);
+                        var segmentStart = this.segmentTo(this.source).start;
+                        return bound.onCorrectSide(segmentStart);
                     }, this)) {
                 return true;
             }
+            //*/
             // Second condition makes sure bounds are tangent to vertex
             return this.angleSum > Math.PI && _.all(this.bounds, function (bound) {
                 return !this.polygon.lineIntersects(bound.slope, bound.intercept);
@@ -149,9 +150,9 @@ define([
     var LastStepShortestPathMap = declare(null, {
 
         colors: {
-            passthrough: [0, 191, 255, 0.50],
-            point: [255, 0, 0, 0.50],
-            edge: [124, 252, 0, 0.50],
+            passthrough: [0, 191, 255, 0.40],
+            point: [255, 0, 0, 0.40],
+            edge: [124, 252, 0, 0.40],
         },
 
         constructor: function (source, polygon, previousMaps) {
@@ -163,28 +164,27 @@ define([
         },
 
         setupRegions: function () {
+            console.log(this.source, this.previousMaps);
             this.regions = [];
             var first = this.polygon.vertices[0];
             var currentEdge = this.polygon.nextEdge(first);
             var currentVertex = first;
             //var first = new ShortestPathRegion(this.source, this.polygon.edges[0], this.polygon);
             var region;
-            if (!isPassThrough(currentVertex, this.source, this.polygon)) {
+            if (this.isVisibleFromPrevious(currentVertex)) {
                 region = this.makeOneRegion(currentVertex);
                 this.regions.push(region);
-                if (!isPassThrough(geom.segmentMidpoint(currentEdge),
-                                    this.source, this.polygon)) {
+                if (this.isVisibleFromPrevious(geom.segmentMidpoint(currentEdge))) {
                     this.regions.push(this.makeOneRegion(currentEdge));
                 }
             }
             currentVertex = currentEdge.end;
             currentEdge = this.polygon.nextEdge(currentVertex);
             while (currentVertex !== first) {
-                if (!isPassThrough(currentVertex, this.source, this.polygon)) {
+                if (this.isVisibleFromPrevious(currentVertex)) {
                     region = this.makeOneRegion(currentVertex);
                     this.regions.push(region);
-                    if (!isPassThrough(geom.segmentMidpoint(currentEdge),
-                                        this.source, this.polygon)) {
+                    if (this.isVisibleFromPrevious(geom.segmentMidpoint(currentEdge))) {
                         this.regions.push(this.makeOneRegion(currentEdge));
                     }
                 }
@@ -194,8 +194,28 @@ define([
             this.regions.push(this.buildPassThroughRegion());
         },
 
+        isVisibleFromPrevious: function (point) {
+            return !this.polygon.segmentIntersects(this._segmentTo(point));
+        },
+
         makeOneRegion: function (source) {
-            return new ShortestPathRegion(this.source, source, this.polygon);
+            return new ShortestPathRegion(this.source, source, this.polygon,
+                                        lang.hitch(this, this._segmentTo));
+        },
+
+        _segmentTo: function (point) {
+            if (this.previousMaps.length === 0) {
+                return {
+                    start: this.source,
+                    end: point
+                };
+            }
+            var path = _.last(this.previousMaps).shortestPathTo(point);
+            console.log(path);
+            return {
+                start: path[path.length - 2],
+                end: path[path.length - 1]
+            };
         },
 
         displayRegions: function (surface, type) {
@@ -262,7 +282,37 @@ define([
         shortestPathTo: function (dest) {
             var region = _.find(this.regions, function (region) {
                 return region.pointWithin(dest);
-            }, this)
+            }, this);
+            if (region.type === "passthrough") {
+                if (this.previousMaps.length === 0) {
+                    return [this.source, dest];
+                } else {
+                    return _.last(this.previousMaps).shortestPathTo(dest);
+                }
+            } else if (region.type === "point") {
+                if (this.previousMaps.length === 0) {
+                    return [this.source, region.source, dest];
+                } else {
+                    return _.last(this.previousMaps).shortestPathTo(region.source).concat([dest]);
+                }
+            } else if (region.type === "edge") {
+                var slope = geom.segmentSlope(region.source);
+                var intercept = geom.segmentIntercept(region.source, slope);
+                var reflected = geom.reflectPointOverLine(dest, slope, intercept);
+                var path = this.shortestPathTo(reflected);
+                var intersection = geom.segmentsIntersect(region.source, {
+                    start: path[path.length - 2],
+                    end: path[path.length - 1]
+                });
+                console.log(region.source, {
+                    start: path[path.length - 2],
+                    end: path[path.length - 1]
+                });
+                if (intersection) {
+                    path[path.length - 1] = intersection;
+                }
+                return path.concat([dest]);
+            }
         }
 
     });

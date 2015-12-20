@@ -71,6 +71,11 @@ define([
             this._setDefaultListeners();
         },
 
+        hasProperty: function (prop) {
+            prop = this.properties[prop];
+            return !!prop && prop.is;
+        },
+
         _setDefaultListeners: function () {
             this.onPointCreate(function (point) {
                 var newEdge = this.prevEdge(point);
@@ -445,6 +450,25 @@ define([
                             xMin <= intersection.x && intersection.x <= xMax &&
                             yMin <= intersection.y && intersection.y <= yMax);
             }, this);
+        },
+
+        pointIn: function (point) {
+            var xMin = _.min(this.vertices, "x").x;
+            var xMax = _.max(this.vertices, "x").x;
+            var segment = {    // Horizontal line from the point to outside polygon
+                start: point,
+                end: {
+                    x: point.x + 2*(xMax - point.x),
+                    y: point.y
+                }
+            };
+            function countIntersection(edge) {
+                var intersection = geom.segmentsIntersect(segment, edge);
+                return (intersection && intersection !== Infinity) ? 1 : 0;
+            }
+            console.log(_.sum(this.edges, countIntersection, this));
+            return xMin <= point.x && point.x <= xMax &&
+                _.sum(this.edges, countIntersection, this) % 2 === 1;
         },
 
         _isConvex: function (vertices) {

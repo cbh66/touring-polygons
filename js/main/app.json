@@ -5,6 +5,7 @@
             "connect": {
                 "_designArea": "designArea",
                 "_toolbar": "toolbar",
+                "_nextButton": "nextButton",
                 "_messagePane": "messagePane"
             }
         },
@@ -21,6 +22,13 @@
             "create": "main/widgets/MainToolbar",
             "params": {}
         },
+        "nextButton": {
+            "create": "main/widgets/EventButton",
+            "params": {},
+            "data": {
+                "event": {"literal": "nextStep"}
+            }
+        },
         "messagePane": {
             "create": "util/MessageWindow",
             "data": {
@@ -30,7 +38,8 @@
     },
 
     "events": {
-        "appStart": ["pathFinder.onAppStart", "designArea.onAppStart"]
+        "appStart": ["pathFinder.onAppStart", "designArea.onAppStart"],
+        "nextStep": ["pathFinder.onNextStepReady"]
     },
 
     "services": {
@@ -38,6 +47,8 @@
         "startConstruction": "pathFinder.startConstruction",
 
         "appendMessage": "messagePane.appendContent",
-        "newMessage": "messagePane.displayFile"
+        "newMessage": "messagePane.displayFile",
+
+        "changeButtonText": "nextButton._setTextAttr"
     }
 }

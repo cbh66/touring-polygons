@@ -68,6 +68,8 @@ define([
                 self.fadeOutAndHide(mainPage.domNode, function () {
                     self._designArea.placeAt(mainArea);
                     self._messagePane.displayFile("instructions.html");
+                    self._nextButton.set("text", "Start the Algorithm!");
+                    self._nextButton.placeAt("nextButton");
                 });
             });
         }
