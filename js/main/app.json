@@ -6,6 +6,7 @@
                 "_designArea": "designArea",
                 "_toolbar": "toolbar",
                 "_nextButton": "nextButton",
+                "_shortcutButton": "shortcutButton",
                 "_messagePane": "messagePane"
             }
         },
@@ -29,6 +30,13 @@
                 "event": {"literal": "nextStep"}
             }
         },
+        "shortcutButton": {
+            "create": "main/widgets/EventButton",
+            "params": {},
+            "data": {
+                "event": {"literal": "quickPath"}
+            }
+        },
         "messagePane": {
             "create": "util/MessageWindow",
             "data": {
@@ -39,7 +47,9 @@
 
     "events": {
         "appStart": ["pathFinder.onAppStart", "designArea.onAppStart"],
-        "nextStep": ["pathFinder.onNextStepReady"]
+        "nextStep": ["pathFinder.onNextStepReady"],
+        "preventInteraction": ["designArea.preventMove", "pathFinder.preventEndpointMoving"],
+        "quickPath": ["interfaceManager.shortcutPressed", "pathFinder.togglePath"]
     },
 
     "services": {

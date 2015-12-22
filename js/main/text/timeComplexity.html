@@ -1,0 +1,6 @@
+<h2>Time Complexity</h2>
+<p>We suppose there are k polygons with a total of n vertices.  k, of course, must be between 0 and n/3.</p>
+<p>The algorithm constructs k maps.  For each map, it computes the shortest path to each vertex.  Therefore, the time to construct all of them is n times the time to compute a single shortest path.</p>
+<p>Given the maps for preceding polygons, a query at a point requires testing for membership in a region, which can be done in time logarithmic in the number of regions.  (The number of regions is the same order as the number of vertices).  We then work backwards, potentially finding the region in all k previous maps.</p>
+<p>Therefore, the total time to compute a shortest path is a sum, for i from 0 to k, of O(log(|Pi|), which is maximized when every polygon has O(n/k) vertices.  This gives a total of O(k log(n/k))</p>
+<p>The overall time complexity is then O(kn log(n/k)).</p>

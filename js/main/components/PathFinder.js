@@ -37,6 +37,13 @@ define([
             ];
         },
 
+        events: function () {
+            return [
+                {name: "preventInteraction", source: "preventInteraction"},
+                {name: "quickPath", source: "quickPath"}
+            ];
+        },
+
         onAppStart: function () {
             function fixProps(point) {
                 point.moveToFront();
@@ -49,7 +56,7 @@ define([
                 }
                 return m;
             }
-            var surface = this.getSurface()
+            var surface = this.getSurface();
             this.startPoint = surface.createCircle({
                 cx: 50,
                 cy: 50,
@@ -63,6 +70,41 @@ define([
                 r: 10
             }).setFill("red").setStroke("blue");
             this.endPointMover = fixProps(this.endPoint);
+        },
+
+        preventEndpointMoving: function () {
+            this.startPointMover.destroy();
+            this.endPointMover.destroy();
+        },
+
+        togglePath: function () {
+            if (this.pathShape) {
+                this.pathShape.removeShape();
+                this.pathShape = null;
+            } else {
+                this.pathShape = this.displayPath();
+            }
+        },
+
+        displayPath: function () {
+            var maps = [];
+            var polygons = this.filterPolygons(true);
+            function makePath(endpoint, map) {
+                var shortestPath;
+                if (map) {
+                    shortestPath = map.shortestPathTo(endpoint);
+                } else {
+                    shortestPath = [this.startPoint, endpoint];
+                }
+                shortestPath = _.map(shortestPath, function (point) {
+                    return {x: point.x, y: point.y}; // Filter out unneeded properties
+                }, this);
+                return this.getSurface().createPolyline(shortestPath).setStroke("blue");
+            }
+            _.each(polygons, function (polygon) {
+                maps.push(new LastStepShortestPathMap(this.startPoint, polygon, maps));
+            }, this);
+            return makePath.call(this, this.endPoint, _.last(maps));
         },
 
         startConstruction: function () {
@@ -143,15 +185,29 @@ define([
                 return self.getSurface().createPolyline(shortestPath).setStroke("blue");
             }
             function addNextStep(index) {
-                self.steps.enqueue(function (finished) {
-                    if (index < polygons.length) {
+                if (index < polygons.length) {
+                    self.steps.enqueue(function (finished) {
                         makeMap(index);
-                    } else {
-                        makePath(self.endPoint, _.last(maps));
-                        self.setButtonText("");
-                    }
-                    finished();
-                });
+                        finished();
+                    });
+                } else {
+                    self.steps.enqueue(function (finished) {
+                        if (!self.pathShape) {
+                            self.quickPath();
+                            //this.pathShape = makePath(self.endPoint, _.last(maps));
+                        }
+                        self.setButtonText("How Long Does it Take?");
+                        self._nextStep = finished;
+                    });
+                    self.steps.enqueue(function (finished) {
+                        self.newMessage("timeComplexity.html");
+                        self.setButtonText("Start Over");
+                        self._nextStep = function () {
+                            window.location.reload();
+                        };
+                        finished();
+                    });
+                }
             }
             this.started = true;
             addNextStep(0);
@@ -186,11 +242,11 @@ define([
                                                     this.getSurface());
             var regions = [];
             self.steps.enqueue(this.displayRegion(map, regions, "passthrough",
-                                "passthroughExplanation.html", midButtonText));
+                                "passthroughBrief.html", midButtonText));
             self.steps.enqueue(this.displayRegion(map, regions, "edge",
-                                "edgeRegionexplanation.html", midButtonText));
+                                "edgeBrief.html", midButtonText));
             self.steps.enqueue(this.displayRegion(map, regions, "point",
-                                "vertexRegionExplanation.html", endingButtonText));
+                                "vertexBrief.html", endingButtonText));
             self.steps.enqueue(function (finished) {
                 _.each(regions, function (region) {
                     region.removeShape();
@@ -206,11 +262,11 @@ define([
                                                     this.getSurface());
             var regions = [];
             self.steps.enqueue(this.displayRegion(map, regions, "passthrough",
-                                "passthroughExplanation.html", midButtonText));
+                                "passthroughBrief.html", midButtonText));
             self.steps.enqueue(this.displayRegion(map, regions, "edge",
-                                "edgeRegionexplanation.html", midButtonText));
+                                "edgeBrief.html", midButtonText));
             self.steps.enqueue(this.displayRegion(map, regions, "point",
-                                "vertexRegionExplanation.html", endingButtonText));
+                                "vertexBrief.html", endingButtonText));
             self.steps.enqueue(beforeRemoval);
             self.steps.enqueue(function (finished) {
                 _.each(regions, function (region) {
@@ -233,8 +289,13 @@ define([
             };
         },
 
-        filterPolygons: function () {
+        filterPolygons: function (quiet) {
             var self = this;
+            function add(fun) {
+                if (!quiet) {
+                    self.steps.enqueue(fun);
+                }
+            }
             var split = _.groupBy(this.polygons, function (polygon) {
                 if (polygon.pointIn(this.startPoint) ||
                         polygon.pointIn(this.endPoint)) {
@@ -246,7 +307,7 @@ define([
                 }
             }, this);
             if (split["unfiltered"]) {
-                self.steps.enqueue(function (finished) {
+                add(function (finished) {
                     self.newMessage("overview.html");
                     if (split["unfiltered"].length === self.polygons.length) {
                         self.setButtonText("Start With the First Polygon");
@@ -257,7 +318,7 @@ define([
                 });
             }
             if (split["nonConvex"]) {
-                self.steps.enqueue(function (finished) {
+                add(function (finished) {
                     self.newMessage("filterNonConvex.html");
                     if (split["containsEndpoints"]) {
                         self.setButtonText("Filter Some More Polygons");
@@ -270,7 +331,7 @@ define([
                 });
             }
             if (split["containsEndpoints"]) {
-                self.steps.enqueue(function (finished) {
+                add(function (finished) {
                     self.newMessage("filterContainsEndpoints.html");
                     if (split["unfiltered"]) {
                         self.setButtonText("Start With the First Polygon");
@@ -285,6 +346,7 @@ define([
 
         onNextStepReady: function () {
             if (!this.started) {
+                this.preventInteraction();
                 this.startConstruction();
             } else {
                 this._nextStep();

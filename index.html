@@ -3,7 +3,7 @@
 <head>
     <link rel="stylesheet" type="text/css" href="https://ajax.googleapis.com/ajax/libs/dojo/1.10.4/dijit/themes/claro/claro.css">
     <link rel="stylesheet" type="text/css" href="css/main.css">
-    <title>Touring Polygons Problem(s)</title>
+    <title>Parts Cutting Problem</title>
     <script type="text/javascript">
         var dojoConfig = {
             async: true,
@@ -37,21 +37,21 @@
 </head>
 
 <body class="claro">
-    <div class="pageOverlay">
+    <div class="pageOverlay" id="pageOverlay">
         <div id="loadingOverlay">
             <div class="loadingMessage">Loading....</div>
         </div>
     </div>
     <div data-dojo-type="dijit/layout/BorderContainer" data-dojo-props="design:'sidebar', gutters:true, liveSplitters:true" style="height:100%; width=100%;">
-        <div data-dojo-type="dijit/layout/ContentPane" data-dojo-props="region:'top'">
-        </div>
-        <div data-dojo-type="dijit/layout/BorderContainer" data-dojo-props="design:'sidebar', gutters:true, liveSplitters:true, region:'right'" style="width:35%;">
+        <div data-dojo-type="dijit/layout/BorderContainer" data-dojo-props="design:'sidebar', splitter:true, gutters:true, liveSplitters:true, region:'right'" style="width:35%;">
             <div data-dojo-type="dijit/layout/ContentPane" data-dojo-props="splitter:true, region:'center'" id="messagePane"></div>
-            <div data-dojo-type="dijit/layout/ContentPane" data-dojo-props="splitter:true, region:'bottom'" id="nextButton" style="height:2em;"></div>
+            <div data-dojo-type="dijit/layout/ContentPane" data-dojo-props="splitter:true, region:'bottom'" id="nextButton" style="height:4em;"></div>
         </div>
         <div data-dojo-type="dijit/layout/ContentPane" data-dojo-props="splitter:true, region:'center'" id="main-area">
         </div>
-        <div data-dojo-type="dijit/layout/ContentPane" data-dojo-props="splitter:true, region:'bottom'" style="height:2em;" id="toolbar">
+        <div data-dojo-type="dijit/layout/ContentPane" data-dojo-props="region:'bottom'" style="height:2em;" id="toolbar">
+        <div class="github"><a class="github" href="https://github.com/cbh66/touring-polygons" target="_blank" style="float: left;"><!--img src="images/github-icon.png" /-->View source code</a></div>
+        <div><a href="http://www.ams.sunysb.edu/~jsbm/papers/stoc03.pdf" target="_blank" style="float: right;">Original paper</a></div>
         </div>
     </div>
 </body>

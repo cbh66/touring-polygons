@@ -41,6 +41,13 @@ define([
             this.addTools();
         },
 
+        preventMove: function () {
+            _.each(this.canvas.shapes, function (shape) {
+                shape.preventMove();
+            }, this);
+            this.canvas._onClick = _.noop;
+        },
+
         getSurface: function () {
             return this.canvas.surface;
         },

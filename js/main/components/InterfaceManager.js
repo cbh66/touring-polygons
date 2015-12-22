@@ -39,7 +39,13 @@ define([
         build: function () {
             this._toolbar.placeAt("toolbar");
             this._messagePane.placeAt("messagePane");
-            this._buildIntro("main/text/intro.html", "main-area");
+            this._designArea.placeAt("main-area");
+            this._buildIntro("main/text/intro.html", "pageOverlay");
+            this._messagePane.displayFile("instructions.html");
+            this._shortcutButton.set("text", "See the Path");
+            this._shortcutButton.placeAt("nextButton");
+            this._nextButton.set("text", "Step by Step Solution");
+            this._nextButton.placeAt("nextButton");
 
             this.fadeOutAndHide(dom.byId("loadingOverlay"));
             this.startApp();
@@ -64,14 +70,23 @@ define([
             var mainPage = new MessageWindow();
             mainPage.placeAt(mainArea);
             mainPage.displayFile(startingText);
-            on.once(dom.byId(mainArea), "click", function () {
-                self.fadeOutAndHide(mainPage.domNode, function () {
-                    self._designArea.placeAt(mainArea);
-                    self._messagePane.displayFile("instructions.html");
-                    self._nextButton.set("text", "Start the Algorithm!");
-                    self._nextButton.placeAt("nextButton");
+            mainArea = dom.byId(mainArea);
+            on.once(mainArea, "click", function () {
+                self.fadeOutAndHide(mainArea, function () {
                 });
             });
+        },
+
+        shortcutPressed: function () {
+            function toggle(value, vals) {
+                var index = _.indexOf(vals, value);
+                index = (index + 1) % vals.length;
+                return vals[index];
+            }
+            var settings = ["See the Path", "Hide the Path"];
+            var newVal = toggle(this._shortcutButton.get("text"), settings);
+            this._shortcutButton.set("text", newVal);
+            //this._shortcutButton.destroy();
         }
     });
 

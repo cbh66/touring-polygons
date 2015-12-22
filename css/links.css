@@ -1,0 +1,15 @@
+a.github:before {
+    content: url("../images/github-icon.png");
+    padding-right: 3px;
+}
+
+a {
+    text-decoration: none;
+    font-size: 1.2em;
+    color: #0000FF;
+}
+
+a:hover {
+    color: #ed490a;
+    text-decoration: underline;
+}

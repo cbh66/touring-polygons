@@ -23,6 +23,29 @@ define([
     }
 
 
+    var FullPlane = declare(null, {
+        drawTo: function (surface, color) {
+            color = color || "transparent";
+            var width = surface.width || surface.rawNode.width.animVal.value;
+            var height = surface.height || surface.rawNode.height.animVal.value;
+            var pathPoints = [
+                {x: -width, y: -height},
+                {x: 2*width, y: -height},
+                {x: 2*width, y: 2*height},
+                {x: -width, y: 2*height}
+            ];
+            pathPoints.push(pathPoints[0]);
+            var path = surface.createPolyline(pathPoints).setStroke("blue");
+            path.setFill(color);
+            return path;
+        },
+
+        pointWithin: function () {
+            return true;
+        }
+    });
+
+
     var ShortestPathRegion = declare([UnboundedRegion], {
 
         passthroughRegionColor: [0, 191, 255, 0.50],
@@ -251,6 +274,7 @@ define([
             var i = 0;
             var direction;
             var lastRegion = this.regions[this.regions.length - 1];
+            var passThroughRegion;
             for (; i < this.regions.length; ++i) {
                 if (this.regions[i].isTangentRegion()) {
                     // Go in the direction AWAY from the other point
@@ -268,7 +292,9 @@ define([
             // Then all shortest paths go to that vertex....
             // 
             if (i === this.regions.length) {
-                // Make special region????
+                passThroughRegion = new FullPlane();
+                passThroughRegion.type = "passthrough";
+                return passThroughRegion;
             }
             function increment(i, inc, max) {
                 i += inc;
@@ -276,7 +302,7 @@ define([
                 return i % max;
             }
 
-            var passThroughRegion = new UnboundedRegion();
+            passThroughRegion = new UnboundedRegion();
             passThroughRegion.type = "passthrough";
             // Add first tangent bound
             passThroughRegion.addBounds(this.regions[i].tangent.flipped());

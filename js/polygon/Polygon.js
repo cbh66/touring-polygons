@@ -280,6 +280,14 @@ define([
             }, this);
         },
 
+        preventMove: function () {
+            _.each(this.vertices, function (point) {
+                point.mover.destroy();
+                point.mover = null;
+                console.log(point);
+            }, this);
+        },
+
         _movePoint: function (mover, shift) {
             var point = mover.shape;
             var nextEdge = this.nextEdge(point);
@@ -335,8 +343,8 @@ define([
                 cy: properties.y,
                 r: this.vertexRadius
             }).setFill(this.vertexFill).setStroke(this._vertexStroke);
-            var m = new Moveable(newPoint);
-            m.onMoved = lang.hitch(this, this._movePoint);
+            newPoint.mover = new Moveable(newPoint);
+            newPoint.mover.onMoved = lang.hitch(this, this._movePoint);
 
             if (this.vertices.length > 0) {
                 var prevPoint = this.vertices[this.vertices.length - 1];
