@@ -70,46 +70,107 @@ define([
             var self = this;
             var polygons = this.filterPolygons();
             var maps = [];
-            _.each(polygons, function (polygon) {
-                maps.push(this.constructMap(polygon, maps));
-            }, this);
-            self.steps.enqueue(function (finished) {
-                self.newMessage("vertexRegionExplanation.html");
-                var shortestPath = _.last(maps).shortestPathTo(self.endPoint); // Or straight line
+
+            function beforePath(finished) {
+                self.newMessage("pathConstruction.html");
+                self.setButtonText("Show the Path");
+                self._nextStep = finished;
+            };
+            function makeMap(index) {
+                var newMap;
+                var polygon = polygons[index];
+                var paths;
+                if (index === 1) {
+                    self.steps.enqueue(function (finished) {
+                        self.newMessage("secondPolygonOverview.html");
+                        self.setButtonText("Calculate Paths to Each Vertex");
+                        self._nextStep = finished;
+                    });
+                } else if (index === 2) {
+                    self.steps.enqueue(function (finished) {
+                        self.newMessage("thirdPolygonOverview.html");
+                        self.setButtonText("Calculate Paths to Each Vertex");
+                        self._nextStep = finished;
+                    });
+                }
+                self.steps.enqueue(function (finished) {
+                    paths = _.map(polygon.vertices, function (vertex) {
+                        return makePath(vertex, maps[index - 1]);
+                    }, self);
+                    if (index === 0) {
+                        self.newMessage("firstPaths.html");
+                    } else if (index === 1) {
+                        self.newMessage("secondPaths.html");
+                    } else {
+                        self.newMessage("lastPaths.html");
+                    }
+                    self.setButtonText("Calculate Regions");
+                    self._nextStep = finished;
+                });
+                if (index === 0) {
+                    if (index < polygons.length - 1) {
+                        newMap = self.constructFirstMap(polygon, "Next Region",
+                                                            "Next Polygon");
+                    } else {
+                        newMap = self.constructFirstMap(polygon, "Next Region",
+                                                            "Construct the Path", beforePath);
+                    }
+                } else if (index < polygons.length - 1) {
+                    newMap = self.constructMiddleMap(polygon, maps, "Next Region", "Next Polygon");
+                } else {
+                    newMap = self.constructLastMap(polygon, maps, "Next Region",
+                                                "Construct the Path", beforePath);
+                }
+                self.steps.enqueue(function (finished) {
+                    _.each(paths, function (path) {
+                        path.removeShape();
+                    }, self);
+                    finished();
+                });
+                maps.push(newMap);
+                addNextStep(index + 1);
+            }
+            function makePath(endpoint, map) {
+                var shortestPath;
+                if (map) {
+                    shortestPath = map.shortestPathTo(endpoint);
+                } else {
+                    shortestPath = [self.startPoint, endpoint];
+                }
                 shortestPath = _.map(shortestPath, function (point) {
                     return {x: point.x, y: point.y}; // Filter out unneeded properties
                 }, this);
-                self.getSurface().createPolyline(shortestPath).setStroke("blue");
-                self.setButtonText("");
-                self._nextStep = finished;
-            });
+                return self.getSurface().createPolyline(shortestPath).setStroke("blue");
+            }
+            function addNextStep(index) {
+                self.steps.enqueue(function (finished) {
+                    if (index < polygons.length) {
+                        makeMap(index);
+                    } else {
+                        makePath(self.endPoint, _.last(maps));
+                        self.setButtonText("");
+                    }
+                    finished();
+                });
+            }
             this.started = true;
+            addNextStep(0);
         },
 
-        constructMap: function (polygon, maps) {
+        constructFirstMap: function (polygon, midButtonText, endingButtonText, beforeRemoval) {
             var self = this;
-            var map = new LastStepShortestPathMap(this.startPoint, polygon, maps,
+            var map = new LastStepShortestPathMap(this.startPoint, polygon, [],
                                                     this.getSurface());
-            var regions;
-            self.steps.enqueue(function (finished) {
-                regions = map.displayRegions(self.getSurface(), "passthrough");
-                self.newMessage("passthroughExplanation.html");
-                self.setButtonText("Next Region Type");
-                self._nextStep = finished;
-            });
-            self.steps.enqueue(function (finished) {
-                regions = regions.concat(map.displayRegions(self.getSurface(), "edge"));
-                self.newMessage("edgeRegionExplanation.html");
-                self._nextStep = finished;
-            });
-            self.steps.enqueue(function (finished) {
-                regions = regions.concat(map.displayRegions(self.getSurface(), "point"));
-                self.newMessage("vertexRegionExplanation.html");
-                // If last polygon
-                self.setButtonText("Construct the Path");
-                self._nextStep = finished;
-                console.log(regions);
-            });
+            var regions = [];
+            self.steps.enqueue(this.displayRegion(map, regions, "passthrough",
+                                "passthroughExplanation.html", midButtonText));
+            self.steps.enqueue(this.displayRegion(map, regions, "edge",
+                                "edgeRegionexplanation.html", midButtonText));
+            self.steps.enqueue(this.displayRegion(map, regions, "point",
+                                "vertexRegionExplanation.html", endingButtonText));
+            if (_.isFunction(beforeRemoval)){
+                self.steps.enqueue(beforeRemoval);
+            }
             self.steps.enqueue(function (finished) {
                 _.each(regions, function (region) {
                     region.removeShape();
@@ -117,6 +178,59 @@ define([
                 finished();
             }, this);
             return map;
+        },
+
+        constructMiddleMap: function (polygon, maps, midButtonText, endingButtonText) {
+            var self = this;
+            var map = new LastStepShortestPathMap(this.startPoint, polygon, maps,
+                                                    this.getSurface());
+            var regions = [];
+            self.steps.enqueue(this.displayRegion(map, regions, "passthrough",
+                                "passthroughExplanation.html", midButtonText));
+            self.steps.enqueue(this.displayRegion(map, regions, "edge",
+                                "edgeRegionexplanation.html", midButtonText));
+            self.steps.enqueue(this.displayRegion(map, regions, "point",
+                                "vertexRegionExplanation.html", endingButtonText));
+            self.steps.enqueue(function (finished) {
+                _.each(regions, function (region) {
+                    region.removeShape();
+                }, this);
+                finished();
+            }, this);
+            return map;
+        },
+
+        constructLastMap: function (polygon, maps, midButtonText, endingButtonText, beforeRemoval) {
+            var self = this;
+            var map = new LastStepShortestPathMap(this.startPoint, polygon, maps,
+                                                    this.getSurface());
+            var regions = [];
+            self.steps.enqueue(this.displayRegion(map, regions, "passthrough",
+                                "passthroughExplanation.html", midButtonText));
+            self.steps.enqueue(this.displayRegion(map, regions, "edge",
+                                "edgeRegionexplanation.html", midButtonText));
+            self.steps.enqueue(this.displayRegion(map, regions, "point",
+                                "vertexRegionExplanation.html", endingButtonText));
+            self.steps.enqueue(beforeRemoval);
+            self.steps.enqueue(function (finished) {
+                _.each(regions, function (region) {
+                    region.removeShape();
+                }, this);
+                finished();
+            });
+            
+            return map;
+        },
+
+        displayRegion: function (map, regions, regionType, explanation, buttonText) {
+            var self = this;
+            return function (finished) {
+                var newRegions = map.displayRegions(self.getSurface(), regionType);
+                Array.prototype.push.apply(regions, newRegions);
+                self.newMessage(explanation);
+                self.setButtonText(buttonText);
+                self._nextStep = finished;
+            };
         },
 
         filterPolygons: function () {
@@ -166,7 +280,6 @@ define([
                     self._nextStep = finished;
                 });
             }
-            console.log(split);
             return split["unfiltered"] || [];
         },
 

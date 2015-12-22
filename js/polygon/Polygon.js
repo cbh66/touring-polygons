@@ -466,7 +466,6 @@ define([
                 var intersection = geom.segmentsIntersect(segment, edge);
                 return (intersection && intersection !== Infinity) ? 1 : 0;
             }
-            console.log(_.sum(this.edges, countIntersection, this));
             return xMin <= point.x && point.x <= xMax &&
                 _.sum(this.edges, countIntersection, this) % 2 === 1;
         },

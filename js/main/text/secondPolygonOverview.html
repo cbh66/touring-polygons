@@ -1,0 +1,4 @@
+<h2>Second Polygon</h2>
+<p>We follow a similar procedure to construct the second polygon's Last Step Shortest Path Map.</p>
+<p>The difference will be how we calculate the edges of the regions.  Before, we shot a ray from the starting point to each vertex.  This time, we still shoot a ray from the starting point, but now we bounce it off the previous polygon.  This allows us our map to take into account the shortest path through the first polygon.</p>
+<p>To do this, we calculate the shortest path to each vertex in our polygon, using the previous map.  We look at the last segment of each of those paths, and use it to calculate the boundary (either by extending it to a tangent line, or by reflecting it off an edge).</p>

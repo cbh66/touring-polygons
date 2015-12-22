@@ -29,10 +29,11 @@ define([
         pointRegionColor: [255, 0, 0, 0.50],
         edgeRegionColor: [124, 252, 0, 0.50],
 
-        constructor: function (start, source, polygon, segmentTo) {
+        constructor: function (start, source, polygon, segmentTo, isVisible) {
             this.start = start;
             this.polygon = polygon;
             this.segmentTo = segmentTo;
+            this.isVisible = isVisible;
             this.tangent = null;
             this.angleSum = 0;
             this._setSource(source);
@@ -76,8 +77,9 @@ define([
             if (otherPoint === point) {
                 otherPoint = edge.end;
             }
-            if (this.type === "point" && this.polygon.isSegmentTangent(segment) &&
-                    this.polygon.segmentIntersects(this.segmentTo(geom.segmentMidpoint(edge)))) {
+            // This point visible, but the edge is not
+            if (this.type === "point" && //this.polygon.isSegmentTangent(segment) &&
+                    !this.isVisible(geom.segmentMidpoint(edge))) {
                 slope = geom.segmentSlope(segment);
                 intercept = geom.segmentIntercept(segment, slope);
                 direction = -geom.sideOfLine(otherPoint, slope, intercept);
@@ -164,12 +166,10 @@ define([
         },
 
         setupRegions: function () {
-            console.log(this.source, this.previousMaps);
             this.regions = [];
             var first = this.polygon.vertices[0];
             var currentEdge = this.polygon.nextEdge(first);
             var currentVertex = first;
-            //var first = new ShortestPathRegion(this.source, this.polygon.edges[0], this.polygon);
             var region;
             if (this.isVisibleFromPrevious(currentVertex)) {
                 region = this.makeOneRegion(currentVertex);
@@ -195,12 +195,24 @@ define([
         },
 
         isVisibleFromPrevious: function (point) {
-            return !this.polygon.segmentIntersects(this._segmentTo(point));
+            var segment = this._segmentTo(point);
+            var polygon;
+            if (this.previousMaps.length > 0) {
+                polygon = _.last(this.previousMaps).polygon;
+            }
+            if (polygon && (//polygon.pointIn(segment.end) ||
+                            this.polygon.pointIn(segment.start))) {
+                return false;
+            }
+            //console.log(this.polygon, segment);
+            //console.log(!this.polygon.segmentIntersects(segment));
+            return !this.polygon.segmentIntersects(segment);
         },
 
         makeOneRegion: function (source) {
             return new ShortestPathRegion(this.source, source, this.polygon,
-                                        lang.hitch(this, this._segmentTo));
+                                        lang.hitch(this, this._segmentTo),
+                                        lang.hitch(this, this.isVisibleFromPrevious));
         },
 
         _segmentTo: function (point) {
@@ -211,7 +223,6 @@ define([
                 };
             }
             var path = _.last(this.previousMaps).shortestPathTo(point);
-            console.log(path);
             return {
                 start: path[path.length - 2],
                 end: path[path.length - 1]
@@ -252,6 +263,12 @@ define([
                     }
                     break;
                 }
+            }
+            // If contains a vertex-sourced region on previous....
+            // Then all shortest paths go to that vertex....
+            // 
+            if (i === this.regions.length) {
+                // Make special region????
             }
             function increment(i, inc, max) {
                 i += inc;
@@ -299,16 +316,17 @@ define([
                 var slope = geom.segmentSlope(region.source);
                 var intercept = geom.segmentIntercept(region.source, slope);
                 var reflected = geom.reflectPointOverLine(dest, slope, intercept);
-                var path = this.shortestPathTo(reflected);
+                var path;
+                if (this.previousMaps.length === 0) {
+                    path = [this.source, reflected];
+                } else {
+                    path = _.last(this.previousMaps).shortestPathTo(reflected);
+                }
                 var intersection = geom.segmentsIntersect(region.source, {
                     start: path[path.length - 2],
                     end: path[path.length - 1]
                 });
-                console.log(region.source, {
-                    start: path[path.length - 2],
-                    end: path[path.length - 1]
-                });
-                if (intersection) {
+                if (intersection && intersection !== Infinity) {
                     path[path.length - 1] = intersection;
                 }
                 return path.concat([dest]);

@@ -1,0 +1,8 @@
+<h2>Paths to Each Vertex</h2>
+<p>We keep following the rules for shortest path to each vertex.
+<ul>
+    <li>If it's in a red region, a vertex-source region, then we have to come from that vertex.  The shortest path is the shortest path to that vertex (which we've already calculated) plus a segment from that vertex to the endpoint.</li>
+    <li>If it's in a green, edge-source region, then we have to reflect off that edge.  To find out where on the edge to bounce off, we reflect the point over the edge and find the shortest path to the reflected point.  We then replace the last leg so it reflects off of the edge instead of going through it.</li>
+    <li>If it's in the passthrough region, we go straight to it .</li>
+</ul>
+</p>

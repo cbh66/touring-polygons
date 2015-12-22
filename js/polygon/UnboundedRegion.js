@@ -51,7 +51,9 @@ define([
                 current = this.bounds[i - 1];
                 intersection = geom.lineIntersectionPoint(current.slope, current.intercept,
                                             this.bounds[i].slope, this.bounds[i].intercept);
-                pathPoints.push(intersection);
+                if (intersection && intersection !== Infinity) {
+                    pathPoints.push(intersection);
+                }
             }
 
             current = this.bounds[this.bounds.length - 1];

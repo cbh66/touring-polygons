@@ -43,13 +43,15 @@ define([
                     vertex.setFill(self.vertexColor);
                 }));
                 callbacks.push(vertex.on("mousedown", function (e) {
-                    _.each(callbacks, function (callback) {
-                        callback.remove();
-                    }, this);
-                    e.stopPropagation();  // Don't want to make a new point
-                    self.currentPolygon.close();
-                    self.incompleteShape = false;
-                    vertex.setFill(self.vertexColor);
+                    if (self.currentPolygon.vertices.length >= 3) {
+                        e.stopPropagation();  // Don't want to make a new point
+                        _.each(callbacks, function (callback) {
+                            callback.remove();
+                        }, this);
+                        self.currentPolygon.close();
+                        self.incompleteShape = false;
+                        vertex.setFill(self.vertexColor);
+                    }
                 }));
             }
         }

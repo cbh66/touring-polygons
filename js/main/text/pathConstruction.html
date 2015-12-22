@@ -1,0 +1,7 @@
+<h2>Path Construction</h2>
+<p>We figure out how to construct the path by checking which region the endpoint is in.  This tells us where we have to come from to get to the endpoint.</p>
+<ul>
+    <li>If it's in a red region, a vertex-source region, then we have to come from that vertex.  The shortest path is the shortest path to that vertex (which we've already calculated) plus a segment from that vertex to the endpoint.</li>
+    <li>If it's in a green, edge-source region, then we have to bounce off that edge.  To find out where on the edge to bounce off, we reflect the point over the edge and find the shortest path to the reflected point.  We then replace the last leg so it reflects off of the edge instead of going through it.</li>
+    <li>If it's in the passthrough region, we can ignore this polygon.  We go back to the Last Step Shortest Path Map of the previous polygon, and compute the shortest path from that.</li>
+</ul>
