@@ -19,10 +19,6 @@
         "pathFinder": {
             "create": "main/components/PathFinder"
         },
-        "toolbar": {
-            "create": "main/widgets/MainToolbar",
-            "params": {}
-        },
         "nextButton": {
             "create": "main/widgets/EventButton",
             "params": {},

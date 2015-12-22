@@ -37,7 +37,6 @@ define([
          *  @memberof InterfaceManager.prototype
          */
         build: function () {
-            this._toolbar.placeAt("toolbar");
             this._messagePane.placeAt("messagePane");
             this._designArea.placeAt("main-area");
             this._buildIntro("main/text/intro.html", "pageOverlay");
