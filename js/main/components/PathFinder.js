@@ -221,7 +221,7 @@ define([
             self.steps.enqueue(this.displayRegion(map, regions, "passthrough",
                                 "passthroughExplanation.html", midButtonText));
             self.steps.enqueue(this.displayRegion(map, regions, "edge",
-                                "edgeRegionexplanation.html", midButtonText));
+                                "edgeRegionExplanation.html", midButtonText));
             self.steps.enqueue(this.displayRegion(map, regions, "point",
                                 "vertexRegionExplanation.html", endingButtonText));
             if (_.isFunction(beforeRemoval)){
