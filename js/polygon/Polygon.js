@@ -284,7 +284,6 @@ define([
             _.each(this.vertices, function (point) {
                 point.mover.destroy();
                 point.mover = null;
-                console.log(point);
             }, this);
         },
 

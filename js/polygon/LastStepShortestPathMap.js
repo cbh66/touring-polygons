@@ -26,8 +26,9 @@ define([
     var FullPlane = declare(null, {
         drawTo: function (surface, color) {
             color = color || "transparent";
-            var width = surface.width || surface.rawNode.width.animVal.value;
-            var height = surface.height || surface.rawNode.height.animVal.value;
+            var dimensions = surface.getDimensions();
+            var width = dimensions.width;
+            var height = dimensions.height;
             var pathPoints = [
                 {x: -width, y: -height},
                 {x: 2*width, y: -height},

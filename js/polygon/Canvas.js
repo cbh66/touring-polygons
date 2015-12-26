@@ -40,7 +40,36 @@ define([
         },
 
         postCreate: function () {
-            var surface = this.surface = gfx.createSurface(this.domNode);
+            this.surface = gfx.createSurface(this.domNode);
+            var oldDimensions = this.surface.getDimensions;
+            this.surface.getDimensions = function () {
+                function chooseNumFrom(obj, arr, index, defaultVal) {
+                    if (index >= arr.length) {
+                        return defaultVal;
+                    }
+                    var val = _.get(obj, arr[index]);
+                    if (_.isFinite(val)) {
+                        return val;
+                    }
+                    return chooseNumFrom(obj, arr, index + 1, defaultVal);
+                }
+                var dimensions;
+                try {
+                    dimensions = oldDimensions.call(this);
+                } catch (e) {
+                    dimensions = {
+                        width: chooseNumFrom(this, ["width", "rawNode.width",
+                                "rawNode.width.animVal.value"], 0, 15000),
+                        height: chooseNumFrom(this, ["height", "rawNode.height",
+                                "rawNode.height.animVal.value"], 0, 15000)
+                    };
+                } finally {
+                    dimensions.width = Math.max(dimensions.width, 15000);
+                    dimensions.height = Math.max(dimensions.height, 15000);
+                    return dimensions;
+                }
+            };
+
             var ourClick = false;
             var self = this;
             this.on("mousedown", function () {
