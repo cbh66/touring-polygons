@@ -70,9 +70,9 @@ define([
             mainPage.placeAt(mainArea);
             mainPage.displayFile(startingText);
             mainArea = dom.byId(mainArea);
-            on.once(mainArea, "click", function () {
-                self.fadeOutAndHide(mainArea, function () {
-                });
+            on.once(mainArea, "click", function (e) {
+                console.log(e);
+                self.fadeOutAndHide(mainArea);
             });
         },
 
