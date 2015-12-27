@@ -1,0 +1,9 @@
+<h2>The Parts Cutting Problem Overview</h2>
+<p>We have a large sheet of plastic, and a laser head that can move across it.  We want to cut out shapes from the plastic, and we want to do it fast: we want the laser head to travel the minimum possible distance to get to each of the polygons and cut them out.</p>
+<p>The Parts Cutting Problem is a specific form of the Touring Polygons Problem, in which a path must be constructed to visit a sequence of polygons in the minimum distance under various constraints.  These problems are described by the paper <a href="http://www.ams.sunysb.edu/~jsbm/papers/stoc03.pdf" target="_blank" onclick="event.stopPropagation();">"Touring a Sequence of Polygons" by Moshe Dror, Alon Efrat, Anna Lubiw, and Joseph S. B. Mitchell.</a>  There are three important restrictions in this problem.
+<ul>
+    <li>The order in which the polygons should be visited must be part of the input - otherwise the problem is as hard as the NP-Hard Travelling Salesperson Problem.</li>
+    <li>The polygons should not intersect, though they can contain one another.  This has more to do with the definition of parts-cutting; the general solution to the Touring Polygons Problem permits intersection, but requires finding the intersection points and taking them into account.</li>
+    <li>The polygons must be convex.  The authors of the paper show, by a clever reduction from 3SAT, that the problem is NP-Hard for arbitrary nonconvex polygons.</li>
+</ul></p>
+<p>Click anywhere to start the example.</p>

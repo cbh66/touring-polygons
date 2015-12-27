@@ -1,0 +1,60 @@
+{
+    "components": {
+        "interfaceManager": {
+            "create": "main/components/InterfaceManager",
+            "connect": {
+                "_designArea": "designArea",
+                "_toolbar": "toolbar",
+                "_nextButton": "nextButton",
+                "_shortcutButton": "shortcutButton",
+                "_messagePane": "messagePane"
+            }
+        },
+        "designArea": {
+            "create": "main/components/Canvas",
+            "connect": {
+                "_pathFinderTool": "pathFinder"
+            }
+        },
+        "pathFinder": {
+            "create": "main/components/PathFinder"
+        },
+        "nextButton": {
+            "create": "main/widgets/EventButton",
+            "params": {},
+            "data": {
+                "event": {"literal": "nextStep"}
+            }
+        },
+        "shortcutButton": {
+            "create": "main/widgets/EventButton",
+            "params": {},
+            "data": {
+                "event": {"literal": "quickPath"}
+            }
+        },
+        "messagePane": {
+            "create": "util/MessageWindow",
+            "data": {
+                "basePath": {"literal": "main/text/"}
+            }
+        }
+    },
+
+    "events": {
+        "appStart": ["pathFinder.onAppStart", "designArea.onAppStart"],
+        "nextStep": ["pathFinder.onNextStepReady"],
+        "preventInteraction": ["designArea.preventMove", "pathFinder.preventEndpointMoving"],
+        "quickPath": ["interfaceManager.shortcutPressed", "pathFinder.togglePath"]
+    },
+
+    "services": {
+        "getSurface": "designArea.getSurface",
+        "startConstruction": "pathFinder.startConstruction",
+
+        "appendMessage": "messagePane.appendContent",
+        "newMessage": "messagePane.displayFile",
+
+        "changeButtonText": "nextButton._setTextAttr"
+    }
+}

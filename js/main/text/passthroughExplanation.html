@@ -1,0 +1,4 @@
+<h2>The Passthrough Region</h2>
+<p>The first region to create is the easiest to use and conceptualize.  The passthrough region is the area on the other side of the polygon, where the shortest path to a point is to just go straight through the polygon.</p>
+<p>If you imagine the starting point as a light source, the passthrough region is the shadow cast by the polygon.  It's the area for which the polygon is in the way of the starting point.  Note that the interior of the polygon is part of the passthrough region.</p>
+<p>We construct the passthrough region by first finding the lines from the starting point tangent to the polygon.  These are the extreme bounds of the passthrough region.  Then, we add a chain of edges between them - whichever chain is closer to the start point.</p>

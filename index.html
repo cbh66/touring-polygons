@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" type="text/css" href="https://ajax.googleapis.com/ajax/libs/dojo/1.10.4/dijit/themes/claro/claro.css">
+    <link rel="stylesheet" type="text/css" href="css/main.css">
+    <title>Parts Cutting Problem</title>
+    <script type="text/javascript">
+        var dojoConfig = {
+            async: true,
+            baseUrl: "./",
+            tlmSiblingOfDojo: false,
+            gfxRenderer: "svg",
+            packages: [
+                {name: "js",   location: "js"},
+                {name: "lib", location: "js/lib"},
+                {name: "util", location: "js/util"},
+                {name: "main", location: "js/main"},
+                {name: "polygon",  location: "js/polygon"}
+            ]
+        };
+    </script>
+    <script src="https://ajax.googleapis.com/ajax/libs/dojo/1.10.4/dojo/dojo.js"></script>
+    <script type="text/javascript">
+        // Parse the HTML and start up the application.
+        require(["dojo/parser", "dojo/promise/all", "js/App", "dojo/text!main/app.json", "dijit/layout/ContentPane", "dijit/layout/BorderContainer", "dojo/domReady!"],
+            function (parser, all, App, config) {
+
+            config = JSON.parse(config);
+            var app = new App(config);
+
+            all([parser.parse(), app.start()]).then(function (_results) {
+                app.getComponent("interfaceManager").build();
+            }, function (err) {
+                console.error("ERROR STARTING APP", err);
+            });
+        });
+    </script>
+</head>
+
+<body class="claro">
+    <div class="pageOverlay" id="pageOverlay">
+        <div id="loadingOverlay">
+            <div class="loadingMessage">Loading....</div>
+        </div>
+    </div>
+    <div data-dojo-type="dijit/layout/BorderContainer" data-dojo-props="design:'sidebar', gutters:true, liveSplitters:true" style="height:100%; width=100%;">
+        <div data-dojo-type="dijit/layout/BorderContainer" data-dojo-props="design:'sidebar', splitter:true, gutters:true, liveSplitters:true, region:'right'" style="width:35%;">
+            <div data-dojo-type="dijit/layout/ContentPane" data-dojo-props="splitter:true, region:'center'" id="messagePane"></div>
+            <div data-dojo-type="dijit/layout/ContentPane" data-dojo-props="splitter:true, region:'bottom'" id="nextButton" style="height:4em;"></div>
+        </div>
+        <div data-dojo-type="dijit/layout/ContentPane" data-dojo-props="splitter:true, region:'center'" id="main-area">
+        </div>
+        <div data-dojo-type="dijit/layout/ContentPane" data-dojo-props="region:'bottom'" style="height:2em;" id="toolbar">
+        <div class="github"><a class="github" href="https://github.com/cbh66/touring-polygons" target="_blank" style="float: left;"><!--img src="images/github-icon.png" /-->View source code</a></div>
+        <div><a href="http://www.ams.sunysb.edu/~jsbm/papers/stoc03.pdf" target="_blank" style="float: right;">Original paper</a></div>
+        </div>
+    </div>
+</body>
+</html>

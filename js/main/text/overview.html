@@ -1,0 +1,5 @@
+<h2>Last-Step Shortest Path Overview</h2>
+<p>For each polygon P, we construct a Last Step Shortest Path Map.  This divides the entire plane into regions, where each region tells us the shortest way of getting to a point by first visiting P.</p>
+<p>So here's the plan: we compute the last-step shortest path regions for our first polygon.  Then, we move to our second polygon, and use the first map to find the shortest path to each of the vertices.  This lets us construct the Last Step Shortest Path Map for the second polygon.  We use this to compute the map for each subsequent polygon.</p>
+<p>When we have all of these maps, we can then find the shortest path to any query point in the plane.  We construct the path backwards, at each step asking where on the previous polygon we must have come from.  We can do this because, for this problem, local optimality implies global optimality.</p>
+<p>Let's get started!  Click the button below to start computing the Last Step Shortest Path regions for the first polygon.</p>

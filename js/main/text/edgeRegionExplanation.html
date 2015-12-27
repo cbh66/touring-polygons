@@ -1,0 +1,4 @@
+<h2>Edge-Source Regions</h2>
+<p>Next, we have these green regions - regions for which we say an edge of the polygon is its source.  Since they are outside the passthrough region, paths must take a detour to touch the polygon before continuing to their destination.  For these areas, the fastest path is to go from the start, touch an edge, and bounce off.</p>
+<p>If we again imagine the starting point as a light source, these regions show how light would reflect off the edges.  Every visible edge has a region for which it is the source.</p>
+<p>We construct each edge-source region by, for each edge, drawing a line from the start to each of the endpoints, and seeing how it reflects off.  The rays of reflection are two of the bounds for the region, the third bound being the edge itself.</p>
