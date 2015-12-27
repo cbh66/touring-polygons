@@ -43,6 +43,11 @@ define([
             this.surface = gfx.createSurface(this.domNode);
             var oldDimensions = this.surface.getDimensions;
             this.surface.getDimensions = function () {
+                return {
+                    width: 15000,
+                    height: 15000
+                };
+
                 function chooseNumFrom(obj, arr, index, defaultVal) {
                     if (index >= arr.length) {
                         return defaultVal;
